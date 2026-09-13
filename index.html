@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Blue Cart Shopping | Multi-Page Reseller Platform</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+  <!-- GLOBAL HEADER -->
+  <header class="app-header">
+    <div class="header-container">
+      <a href="javascript:void(0)" onclick="navigateTo('home')" class="logo">
+        <span class="logo-blue">BLUE</span><span class="logo-cart">CART</span>
+        <span class="tag" id="app-badge-role">RESELLER</span>
+      </a>
+
+      <div class="search-bar">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" id="header-search" placeholder="Search products..." onkeyup="handleGlobalSearch(event)" />
+      </div>
+
+      <div class="header-actions">
+        <button class="nav-icon-btn" onclick="navigateTo('cart')" title="Cart">
+          <i class="fa-solid fa-bag-shopping"></i>
+          <span class="badge cart-badge-count">0</span>
+        </button>
+        <div id="header-auth-btn">
+          <button class="btn btn-sm btn-outline" onclick="navigateTo('login')"><i class="fa-regular fa-user"></i> Login</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div id="toast-container"></div>
+
+  <!-- MULTI-PAGE CONTAINER -->
+  <main id="multipage-wrapper">
+
+    <!-- PAGE 1: HOME -->
+    <section id="page-home" class="page-view active">
+      <div class="container">
+        <div class="hero-card">
+          <h1>Start Your Reselling Business</h1>
+          <p>Resell products on WhatsApp with zero investment. Set your own selling price and keep 100% of the profit.</p>
+          <div class="hero-actions">
+            <button class="btn btn-accent" onclick="navigateTo('reseller-dashboard')"><i class="fa-solid fa-bolt"></i> START RESELLING</button>
+            <button class="btn btn-outline-white" onclick="document.getElementById('products-section').scrollIntoView({behavior:'smooth'})">BROWSE CATALOG</button>
+          </div>
+        </div>
+
+        <div class="category-scroll">
+          <div class="cat-pill active" onclick="filterCategory('All')">All Products</div>
+          <div class="cat-pill" onclick="filterCategory('Women')">Women Fashion</div>
+          <div class="cat-pill" onclick="filterCategory('Men')">Men Fashion</div>
+          <div class="cat-pill" onclick="filterCategory('Electronics')">Electronics</div>
+          <div class="cat-pill" onclick="filterCategory('Home')">Home Essentials</div>
+        </div>
+
+        <div id="products-section" style="margin-top: 20px;">
+          <h3 style="margin-bottom: 12px;">Trending Wholesale Products</h3>
+          <div id="home-products-grid" class="grid"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PAGE 2: PRODUCT DETAILS (RESELLER & CUSTOMER DUAL VIEW) -->
+    <section id="page-product" class="page-view">
+      <div class="container" style="max-width: 650px;">
+        <button class="btn-back" onclick="navigateBack()"><i class="fa-solid fa-arrow-left"></i> Back</button>
+        
+        <div class="card" style="margin-top: 10px; padding: 16px;">
+          <div style="position:relative;">
+            <img id="detail-product-img" src="" alt="Product" class="product-gallery-img" />
+            <span id="cust-discount-tag" class="profit-badge" style="position:absolute; top:12px; left:12px; font-size:0.8rem; display:none;">SPECIAL OFFER</span>
+          </div>
+
+          <span class="badge-tag" id="detail-product-cat" style="margin-top:12px;">Category</span>
+          <h2 id="detail-product-name" style="margin: 8px 0;">Product Title</h2>
+          
+          <div class="price-row" style="margin-bottom: 14px;">
+            <span id="detail-product-selling" class="selling-price" style="font-size:1.6rem; color:var(--primary);">₹0</span>
+            <span id="detail-product-mrp" class="mrp-price" style="font-size:1rem;">MRP: ₹0</span>
+          </div>
+
+          <!-- A. RESELLER MODE: PROFIT CALCULATOR (കസ്റ്റമർ ലിങ്ക് തുറക്കുമ്പോൾ ഇത് കാണില്ല) -->
+          <div id="reseller-profit-calc-box" class="calc-box">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+              <h4 style="color:var(--primary);"><i class="fa-solid fa-calculator"></i> Set Your Margin</h4>
+              <small style="color:var(--muted);">Set price to share with customer</small>
+            </div>
+
+            <div class="calc-row">
+              <span>Supplier Base Price:</span>
+              <strong id="calc-base-display">₹0</strong>
+            </div>
+
+            <div class="calc-row">
+              <span>Your Customer Selling Price:</span>
+              <div>
+                ₹ <input type="number" id="calc-selling-input" class="calc-input" />
+              </div>
+            </div>
+
+            <div class="calc-row" style="border-top:1px dashed #cbd5e1; padding-top:10px; margin-top:8px;">
+              <span style="font-weight:700;">Your Direct Profit:</span>
+              <strong id="calc-profit-display" style="color:var(--success); font-size:1.3rem;">₹0</strong>
+            </div>
+          </div>
+
+          <!-- RESELLER ACTION BUTTONS -->
+          <div id="reseller-action-btns" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px;">
+            <button class="btn btn-outline" onclick="addProductToCartFromDetail()"><i class="fa-solid fa-cart-plus"></i> Add To Cart</button>
+            <button class="btn btn-accent" onclick="shareProductWhatsApp()"><i class="fa-brands fa-whatsapp"></i> Share on WhatsApp</button>
+          </div>
+
+          <!-- B. CUSTOMER MODE: DIRECT CASH ON DELIVERY BUTTON (കസ്റ്റമർ ലിങ്ക് തുറക്കുമ്പോൾ മാത്രം കാണുന്നത്) -->
+          <div id="customer-buy-box" style="display:none; margin-top: 14px;">
+            <div style="background:#ecfdf5; border:1px solid #a7f3d0; padding:12px; border-radius:8px; margin-bottom:12px; font-size:0.85rem; color:#065f46;">
+              <i class="fa-solid fa-shield-halved"></i> <strong>Verified Cash on Delivery (COD) Available</strong>. Pay only when you receive the product at your home!
+            </div>
+            <button class="btn btn-accent btn-block" style="padding:15px; font-size:1.05rem;" onclick="customerDirectBuyNow()">
+              <i class="fa-solid fa-truck-fast"></i> Order with Cash on Delivery (₹<span id="btn-cust-price"></span>)
+            </button>
+          </div>
+
+          <div style="margin-top: 20px; border-top: 1px solid var(--border); padding-top: 14px;">
+            <h4>Product Details</h4>
+            <p id="detail-product-desc" style="font-size: 0.9rem; color: var(--muted); margin-top: 6px; line-height: 1.5;"></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PAGE 3: RESELLER CART -->
+    <section id="page-cart" class="page-view">
+      <div class="container" style="max-width: 650px;">
+        <button class="btn-back" onclick="navigateTo('home')"><i class="fa-solid fa-arrow-left"></i> Continue Shopping</button>
+        <h2 style="margin: 14px 0;">Reseller Order Cart</h2>
+
+        <div id="cart-items-container"></div>
+
+        <div id="cart-summary-box" class="calc-box" style="display:none; margin-top: 20px;">
+          <div class="calc-row"><span>Total Collectible:</span> <strong id="cart-total-selling">₹0</strong></div>
+          <div class="calc-row"><span>Supplier Base:</span> <span id="cart-total-base">₹0</span></div>
+          <div class="calc-row" style="border-top: 1px dashed #cbd5e1; padding-top: 10px; margin-top: 6px;">
+            <span style="font-weight:700; color:var(--success);">Your Expected Profit:</span>
+            <strong id="cart-total-profit" style="color:var(--success); font-size:1.3rem;">₹0</strong>
+          </div>
+          <button class="btn btn-primary btn-block" style="margin-top: 14px;" onclick="navigateTo('checkout')">
+            <i class="fa-solid fa-truck-fast"></i> Proceed to Customer Address
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- PAGE 4: CHECKOUT FORM -->
+    <section id="page-checkout" class="page-view">
+      <div class="container" style="max-width: 550px;">
+        <button class="btn-back" onclick="navigateBack()"><i class="fa-solid fa-arrow-left"></i> Back</button>
+        <h2 style="margin: 14px 0;" id="co-header-title">Delivery Address</h2>
+        <p style="color: var(--muted); font-size: 0.85rem; margin-bottom: 14px;">Please enter complete address for Cash on Delivery shipment.</p>
+
+        <form id="checkout-shipping-form" onsubmit="handlePlaceOrder(event)" class="card" style="padding: 16px; display:flex; flex-direction:column; gap:12px;">
+          <input type="text" id="order-cust-name" placeholder="Full Name" required class="form-input" />
+          <input type="tel" id="order-cust-phone" placeholder="10-Digit Mobile Number" required class="form-input" />
+          <textarea id="order-cust-address" placeholder="House / Flat No, Street, Landmark" required class="form-input" style="height: 70px;"></textarea>
+          <div style="display:flex; gap:10px;">
+            <input type="text" id="order-cust-city" placeholder="City / Town" required class="form-input" style="flex:1;" />
+            <input type="text" id="order-cust-pincode" placeholder="PIN Code" required class="form-input" style="flex:1;" />
+          </div>
+
+          <div class="calc-box" style="margin: 6px 0;">
+            <div class="calc-row"><span>Payment Option:</span> <strong>Cash on Delivery (COD)</strong></div>
+            <div class="calc-row"><span>Amount to Pay upon Delivery:</span> <strong id="co-summary-total" style="font-size:1.15rem; color:var(--primary);">₹0</strong></div>
+            <div class="calc-row" id="co-profit-row"><span>Reseller Profit:</span> <strong id="co-summary-profit" style="color:var(--success);">₹0</strong></div>
+          </div>
+
+          <button type="submit" class="btn btn-accent btn-block" style="padding: 14px; font-size: 1rem;">
+            <i class="fa-solid fa-shield-check"></i> Confirm Cash on Delivery Order
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <!-- PAGE 5: RESELLER DASHBOARD -->
+    <section id="page-reseller-dashboard" class="page-view">
+      <div class="container" style="max-width: 800px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+          <div>
+            <h2>Reseller Dashboard</h2>
+            <small style="color:var(--muted);" id="reseller-portal-code">Reseller ID: BCS-8821</small>
+          </div>
+          <button class="btn btn-outline btn-sm" onclick="navigateTo('reseller-wallet')"><i class="fa-solid fa-wallet"></i> My Wallet</button>
+        </div>
+
+        <div class="grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 20px;">
+          <div class="card" style="padding: 14px; text-align: center;">
+            <small style="color:var(--muted);">Total Orders</small>
+            <div id="stat-total-orders" style="font-size:1.6rem; font-weight:800;">0</div>
+          </div>
+          <div class="card" style="padding: 14px; text-align: center;">
+            <small style="color:var(--muted);">Available Profit</small>
+            <div id="stat-ready-profit" style="font-size:1.6rem; font-weight:800; color:var(--success);">₹0</div>
+          </div>
+          <div class="card" style="padding: 14px; text-align: center;">
+            <small style="color:var(--muted);">In-Transit Margin</small>
+            <div id="stat-transit-profit" style="font-size:1.6rem; font-weight:800; color:var(--accent);">₹0</div>
+          </div>
+        </div>
+
+        <h3>Your Reseller Shipments</h3>
+        <div id="reseller-orders-list" style="margin-top: 12px; display:flex; flex-direction:column; gap:10px;"></div>
+      </div>
+    </section>
+
+    <!-- PAGE 6: RESELLER WALLET -->
+    <section id="page-reseller-wallet" class="page-view">
+      <div class="container" style="max-width: 500px;">
+        <button class="btn-back" onclick="navigateTo('reseller-dashboard')"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</button>
+        <h2 style="margin: 14px 0;">Wallet & Bank Payout</h2>
+
+        <div class="calc-box" style="text-align:center; padding: 24px;">
+          <small style="color:var(--muted);">Available Balance</small>
+          <h1 id="wallet-balance-num" style="color:var(--success); font-size:2.4rem; margin:6px 0;">₹0.00</h1>
+          <small style="color:var(--muted);">Profit credited upon order delivery</small>
+        </div>
+
+        <div class="card" style="padding: 16px; margin-top: 16px;">
+          <h4>Request UPI Withdrawal</h4>
+          <form id="payout-req-form" onsubmit="handlePayoutRequest(event)" style="margin-top: 12px; display:flex; flex-direction:column; gap:10px;">
+            <input type="number" id="payout-amount-input" placeholder="Amount (₹)" required class="form-input" />
+            <input type="text" id="payout-upi-input" placeholder="UPI ID (e.g. name@okaxis)" required class="form-input" />
+            <button type="submit" class="btn btn-primary btn-block">Transfer to UPI</button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- PAGE 7: ADMIN ORDER CONTROLLER -->
+    <section id="page-admin" class="page-view">
+      <div class="container">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+          <div>
+            <h2>Admin Management</h2>
+            <small style="color:var(--muted);">Change order delivery status & credit reseller wallets</small>
+          </div>
+          <span class="badge" style="background:#991b1b; padding:4px 8px; font-size:0.75rem;">ADMIN</span>
+        </div>
+
+        <div class="table-card">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Order ID</th>
+                <th>Customer Details</th>
+                <th>Price</th>
+                <th>Reseller Margin</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="admin-orders-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- PAGE 8: AUTH -->
+    <section id="page-login" class="page-view">
+      <div class="container" style="max-width: 420px; padding-top: 30px;">
+        <div class="card" style="padding: 24px;">
+          <h2 style="text-align: center;">Reseller Login</h2>
+          <p style="text-align:center; color:var(--muted); font-size:0.85rem; margin-bottom: 18px;">Sign in to set prices and manage orders</p>
+          
+          <form id="auth-form" onsubmit="handleAuthSubmit(event)" style="display:flex; flex-direction:column; gap:12px;">
+            <input type="email" id="auth-email" placeholder="Email Address" required class="form-input" />
+            <input type="password" id="auth-password" placeholder="Password" required class="form-input" />
+            <button type="submit" class="btn btn-primary btn-block" style="padding:12px;">Sign In</button>
+          </form>
+
+          <div style="text-align:center; margin-top: 14px;">
+            <button class="btn btn-sm btn-outline" onclick="demoAdminLogin()">Demo Admin Login</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- BOTTOM NAVIGATION -->
+  <nav class="mobile-bottom-nav">
+    <button class="nav-tab active" data-page="home" onclick="navigateTo('home')">
+      <i class="fa-solid fa-house"></i>
+      <span>Home</span>
+    </button>
+    <button class="nav-tab" data-page="reseller-dashboard" onclick="navigateTo('reseller-dashboard')">
+      <i class="fa-solid fa-chart-line"></i>
+      <span>Resell</span>
+    </button>
+    <button class="nav-tab" data-page="cart" onclick="navigateTo('cart')">
+      <i class="fa-solid fa-bag-shopping"></i>
+      <span class="badge cart-badge-count">0</span>
+      <span>Cart</span>
+    </button>
+    <button class="nav-tab" data-page="admin" onclick="navigateTo('admin')">
+      <i class="fa-solid fa-user-shield"></i>
+      <span>Admin</span>
+    </button>
+    <button class="nav-tab" data-page="login" onclick="navigateTo('login')">
+      <i class="fa-solid fa-user"></i>
+      <span>Account</span>
+    </button>
+  </nav>
+
+  <script src="script.js"></script>
+</body>
+</html>
