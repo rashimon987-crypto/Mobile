@@ -3,6 +3,7 @@
   --primary-dark: #1e3a8a;
   --secondary: #0284c7;
   --accent: #15803d;
+  --accent-light: #22c55e;
   --bg: #f8fafc;
   --card: #ffffff;
   --text: #0f172a;
@@ -11,7 +12,7 @@
   --danger: #ef4444;
   --success: #16a34a;
   --radius: 12px;
-  --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05);
+  --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
 }
 
 * {
@@ -28,6 +29,7 @@ body {
   padding-bottom: 75px;
 }
 
+/* MULTI-PAGE VIEW SYSTEM */
 .page-view {
   display: none;
   animation: fadeIn 0.2s ease-in-out;
@@ -40,6 +42,7 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* GLOBAL HEADER */
 .app-header {
   position: sticky;
   top: 0;
@@ -110,6 +113,7 @@ body {
   position: relative;
 }
 
+/* BADGES & TOASTS */
 .badge {
   position: absolute;
   top: -6px;
@@ -146,6 +150,7 @@ body {
   padding: 10px 16px;
   border-radius: 8px;
   font-size: 0.85rem;
+  box-shadow: var(--shadow);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -153,6 +158,7 @@ body {
 .toast.success { background: #166534; }
 .toast.error { background: #991b1b; }
 
+/* CONTAINER & BUTTONS */
 .container {
   max-width: 1100px;
   margin: 0 auto;
@@ -169,26 +175,33 @@ body {
   font-size: 0.875rem;
   cursor: pointer;
   border: none;
+  transition: 0.2s;
   text-decoration: none;
 }
 .btn-primary { background: var(--primary); color: white; }
+.btn-primary:hover { background: var(--primary-dark); }
 .btn-accent { background: var(--accent); color: white; }
+.btn-accent:hover { background: #14532d; }
 .btn-outline { background: transparent; border: 1px solid var(--primary); color: var(--primary); }
 .btn-outline-white { background: transparent; border: 1px solid rgba(255,255,255,0.5); color: white; }
 .btn-sm { padding: 6px 12px; font-size: 0.8rem; }
 .btn-block { width: 100%; }
 .btn-back { background: none; border: none; font-size: 0.85rem; font-weight: 700; color: var(--muted); cursor: pointer; margin-bottom: 8px; }
 
+/* HERO BANNER */
 .hero-card {
   background: linear-gradient(135deg, #1d4ed8, #2563eb);
   color: white;
   border-radius: var(--radius);
   padding: 24px;
+  box-shadow: var(--shadow);
 }
-.hero-card h1 { font-size: 1.5rem; font-weight: 800; }
+.hero-card h1 { font-size: 1.5rem; font-weight: 800; line-height: 1.25; }
 .hero-card p { font-size: 0.9rem; opacity: 0.9; margin: 8px 0 16px; }
-.hero-actions { display: flex; gap: 10px; }
+.hero-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.hero-features { display: flex; gap: 16px; margin-top: 18px; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 12px; font-size: 0.8rem; flex-wrap: wrap; }
 
+/* CATEGORY SCROLL */
 .category-scroll {
   display: flex;
   gap: 8px;
@@ -205,8 +218,13 @@ body {
   white-space: nowrap;
   cursor: pointer;
 }
-.cat-pill.active { background: var(--primary); color: white; }
+.cat-pill.active {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
 
+/* PRODUCT GRID */
 .grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -225,9 +243,22 @@ body {
   box-shadow: var(--shadow);
   overflow: hidden;
 }
-.product-card { display: flex; flex-direction: column; }
-.product-card img { width: 100%; aspect-ratio: 1/1; object-fit: cover; background: #f1f5f9; }
-.product-card-body { padding: 10px; flex: 1; display: flex; flex-direction: column; }
+.product-card {
+  display: flex;
+  flex-direction: column;
+}
+.product-card img {
+  width: 100%;
+  aspect-ratio: 1/1;
+  object-fit: cover;
+  background: #f1f5f9;
+}
+.product-card-body {
+  padding: 10px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
 .product-title {
   font-size: 0.85rem;
   font-weight: 600;
@@ -242,6 +273,7 @@ body {
 .mrp-price { font-size: 0.75rem; text-decoration: line-through; color: var(--muted); }
 .profit-badge { background: #dcfce7; color: #166534; font-size: 0.7rem; font-weight: 700; padding: 2px 6px; border-radius: 4px; }
 
+/* PROFIT CALCULATOR BOX */
 .calc-box {
   background: #eff6ff;
   border: 1px solid #bfdbfe;
@@ -264,6 +296,7 @@ body {
   font-size: 1rem;
   font-weight: 700;
   text-align: right;
+  outline: none;
 }
 .form-input {
   width: 100%;
@@ -273,6 +306,7 @@ body {
   font-size: 0.875rem;
 }
 
+/* MOBILE BOTTOM NAV */
 .mobile-bottom-nav {
   position: fixed;
   bottom: 0;
@@ -295,12 +329,110 @@ body {
   flex-direction: column;
   align-items: center;
   cursor: pointer;
+  position: relative;
 }
 .nav-tab.active { color: var(--primary); font-weight: 700; }
 .nav-tab i { font-size: 1.15rem; margin-bottom: 2px; }
 
-.table-card { background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); overflow-x: auto; }
-.data-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-.data-table th, .data-table td { padding: 12px; border-bottom: 1px solid var(--border); }
+/* TABLE CARD FOR ADMIN */
+.table-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  overflow-x: auto;
+}
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  text-align: left;
+}
+.data-table th, .data-table td {
+  padding: 12px;
+  border-bottom: 1px solid var(--border);
+}
 .data-table th { background: #f8fafc; font-weight: 700; }
 .product-gallery-img { width: 100%; border-radius: var(--radius); max-height: 380px; object-fit: cover; }
+/* PAYMENT METHOD SELECTOR CARDS */
+.payment-method-card {
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--card);
+  transition: 0.2s ease;
+}
+.payment-method-card.active {
+  border-color: var(--primary);
+  background: #eff6ff;
+}
+.badge-status-verified {
+  background: #dcfce7;
+  color: #15803d;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+}
+.badge-status-pending {
+  background: #fef3c7;
+  color: #b45309;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+}
+/* FEED CATEGORY BREAK BANNERS (ഇടയ്ക്കുള്ള കാറ്റഗറി ഡിസൈൻ) */
+.feed-category-section {
+  margin-top: 24px;
+}
+.feed-cat-banner {
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  box-shadow: var(--shadow);
+}
+.feed-cat-banner.banner-women {
+  background: linear-gradient(135deg, #db2777, #f43f5e);
+}
+.feed-cat-banner.banner-electronics {
+  background: linear-gradient(135deg, #0284c7, #2563eb);
+}
+.feed-cat-banner.banner-men {
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+}
+.feed-cat-banner.banner-home {
+  background: linear-gradient(135deg, #059669, #10b981);
+}
+
+.feed-cat-banner .banner-sub {
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  background: rgba(255, 255, 255, 0.25);
+  padding: 2px 8px;
+  border-radius: 4px;
+  display: inline-block;
+  margin-bottom: 4px;
+}
+.feed-cat-banner h3 {
+  font-size: 1.15rem;
+  font-weight: 800;
+  margin: 2px 0;
+}
+.feed-cat-banner p {
+  font-size: 0.78rem;
+  opacity: 0.9;
+}
+.feed-cat-banner .btn {
+  white-space: nowrap;
+  font-size: 0.75rem;
+  padding: 8px 14px;
+}

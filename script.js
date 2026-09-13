@@ -1,21 +1,31 @@
 /**
- * BLUE CART SHOPPING - MULTI-PAGE & RESELLER LOGIC
+ * =====================================================================
+ * BLUE CART SHOPPING - FULL CLIENT ENGINE
+ * Multi-page Navigation, Category Feed, Reseller Margins, 
+ * WhatsApp Viral Sharing, Instant UPI Deep-linking & Supabase Sync
+ * =====================================================================
  */
 
-const SUPABASE_URL = "https://YOUR_PROJECT_ID.supabase.co";
-const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
+// 1. SUPABASE DATABASE CONFIGURATION
+const SUPABASE_URL = "https://mxwcnkopzlktfgyyhych.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im14d2Nua29wemxrdGZneXloeWNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY1MzU3ODgsImV4cCI6MjEwMjExMTc4OH0.jEm_GRhCNcmeVRphRy5XdzCopGhP79CzxrR-9hOQROw";
 
 const client = (SUPABASE_URL.startsWith("http") && !SUPABASE_URL.includes("YOUR_PROJECT"))
   ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
   : null;
 
+// ADMIN CONFIGURABLE UPI ID (Synced with Admin Panel / localStorage)
+let ADMIN_UPI_ID = localStorage.getItem('bluecart_admin_upi') || "bluecart@upi";
+
+// 2. GLOBAL APP STATE
 const state = {
   currentPage: 'home',
   user: null,
   cart: JSON.parse(localStorage.getItem('bluecart_cart') || '[]'),
   referralCode: localStorage.getItem('bluecart_ref') || 'BCS-8821',
-  customerSellingPrice: null, // Holds the price passed via WhatsApp link
-  isCustomerMode: false,
+  customerSellingPrice: null, // Passed when customer clicks WhatsApp link
+  isCustomerMode: false,      // True when customer views shared link
+  selectedPaymentMethod: 'UPI',
   products: [
     {
       id: 'p101',
@@ -25,7 +35,7 @@ const state = {
       mrp: 899,
       default_reseller_profit: 100,
       images: ['https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=600'],
-      description: 'Pure breathable cotton fabric with rich gold foil ethnic print. Machine washable, skin-friendly, Cash On Delivery available across India.'
+      description: 'Pure breathable cotton fabric with rich gold foil ethnic print. Instant UPI payment and Cash On Delivery available across India.'
     },
     {
       id: 'p102',
@@ -62,8 +72,10 @@ const state = {
   selectedProduct: null
 };
 
+// Toast Notifications Helper
 function showToast(message, type = 'info') {
   const container = document.getElementById('toast-container');
+  if (!container) return;
   const toast = document.createElement('div');
   toast.className = `toast ${type}`;
   toast.innerHTML = `<i class="fa-solid fa-circle-check"></i> ${message}`;
@@ -71,7 +83,7 @@ function showToast(message, type = 'info') {
   setTimeout(() => toast.remove(), 3500);
 }
 
-// 1. ROUTING SYSTEM (Back/Forward Button & URL Query Aware)
+// 3. MULTI-PAGE NAVIGATION ROUTER (History & Query Aware)
 function navigateTo(pageName, params = {}, pushHistory = true) {
   document.querySelectorAll('.page-view').forEach(p => p.classList.remove('active'));
   const target = document.getElementById(`page-${pageName}`);
@@ -81,10 +93,12 @@ function navigateTo(pageName, params = {}, pushHistory = true) {
     state.currentPage = pageName;
     window.scrollTo(0, 0);
 
+    // Update bottom nav tab state
     document.querySelectorAll('.nav-tab').forEach(tab => {
       tab.classList.toggle('active', tab.getAttribute('data-page') === pageName);
     });
 
+    // Update Browser History & Address Bar
     const query = new URLSearchParams(params);
     query.set('page', pageName);
     const newUrl = `${window.location.pathname}?${query.toString()}`;
@@ -93,6 +107,7 @@ function navigateTo(pageName, params = {}, pushHistory = true) {
       window.history.pushState({ page: pageName, params }, '', newUrl);
     }
 
+    // Initialize individual page logic
     if (pageName === 'home') {
       document.title = "Blue Cart | Wholesale Reseller Shopping";
       renderHomeProducts(state.products);
@@ -103,7 +118,7 @@ function navigateTo(pageName, params = {}, pushHistory = true) {
       document.title = "Blue Cart | Reseller Cart";
       renderCartPage();
     } else if (pageName === 'checkout') {
-      document.title = "Blue Cart | Customer Address";
+      document.title = "Blue Cart | Customer Address & Payment";
       setupCheckoutSummary();
     } else if (pageName === 'reseller-dashboard') {
       document.title = "Blue Cart | Reseller Portal";
@@ -111,9 +126,6 @@ function navigateTo(pageName, params = {}, pushHistory = true) {
     } else if (pageName === 'reseller-wallet') {
       document.title = "Blue Cart | Earnings & Wallet";
       renderWalletPage();
-    } else if (pageName === 'admin') {
-      document.title = "Blue Cart | Admin Order Management";
-      renderAdminOrdersTable();
     }
   }
 }
@@ -122,6 +134,7 @@ function navigateBack() {
   window.history.back();
 }
 
+// Support browser Forward and Backward buttons natively
 window.onpopstate = (event) => {
   const urlParams = new URLSearchParams(window.location.search);
   const page = urlParams.get('page') || 'home';
@@ -131,10 +144,55 @@ window.onpopstate = (event) => {
   navigateTo(page, { id, sp, ref }, false);
 };
 
-// 2. HOME CATALOG
-function renderHomeProducts(productList) {
-  const grid = document.getElementById('home-products-grid');
-  grid.innerHTML = productList.map(p => {
+// 4. HOME CATALOG WITH INTERSPERSED CATEGORY BREAKS
+async function renderHomeProducts(productList) {
+  // Sync products from Supabase if online
+  if (client) {
+    try {
+      const { data } = await client.from('products').select('*').eq('is_active', true);
+      if (data && data.length) state.products = data;
+    } catch (err) {
+      console.warn("Using local product catalog fallback:", err);
+    }
+  }
+
+  const container = document.getElementById('home-feed-container');
+  if (!container) return;
+
+  // Visual Category Banners Configuration
+  const categoryConfig = [
+    {
+      key: 'Women',
+      title: '👗 Women Fashion & Kurtis',
+      sub: 'TOP RESELLING PICKS',
+      desc: 'High demand daily wear & festive ethnic collections',
+      cssClass: 'banner-women'
+    },
+    {
+      key: 'Electronics',
+      title: '🎧 Smart Electronics & Audio',
+      sub: 'BEST PROFIT MARGINS',
+      desc: 'Bluetooth earbuds, smartwatches & trending accessories',
+      cssClass: 'banner-electronics'
+    },
+    {
+      key: 'Men',
+      title: '👕 Men Casual & Formal Wear',
+      sub: 'TRENDING THIS WEEK',
+      desc: 'Premium cotton shirts & tailored streetwear',
+      cssClass: 'banner-men'
+    },
+    {
+      key: 'Home',
+      title: '🏠 Home & Kitchen Essentials',
+      sub: 'DAILY ESSENTIALS',
+      desc: 'Insulated vacuum flasks, storage & kitchen utilities',
+      cssClass: 'banner-home'
+    }
+  ];
+
+  // Helper function to build Product Card HTML
+  function createProductCardHtml(p) {
     const defaultSelling = Number(p.base_price) + Number(p.default_reseller_profit);
     return `
       <div class="card product-card">
@@ -152,22 +210,139 @@ function renderHomeProducts(productList) {
         </div>
       </div>
     `;
-  }).join('');
+  }
+
+  let finalHtml = '';
+
+  // 1. Initial Batch: Top Trending Products
+  const topTrending = state.products.slice(0, 2);
+  if (topTrending.length > 0) {
+    finalHtml += `
+      <div class="feed-category-section">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+          <h3 style="font-size:1.1rem;"><i class="fa-solid fa-fire" style="color:#ef4444;"></i> Top Trending Products</h3>
+          <span style="font-size:0.75rem; color:var(--muted);">Cash On Delivery</span>
+        </div>
+        <div class="grid">
+          ${topTrending.map(p => createProductCardHtml(p)).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  // 2. Interspersing Category Break Banners & their Products
+  categoryConfig.forEach(cat => {
+    const categoryProducts = state.products.filter(p => p.category === cat.key);
+
+    if (categoryProducts.length > 0) {
+      finalHtml += `
+        <div class="feed-category-section">
+          <!-- INTERSPERSED CATEGORY BANNER -->
+          <div class="feed-cat-banner ${cat.cssClass}">
+            <div>
+              <span class="banner-sub">${cat.sub}</span>
+              <h3>${cat.title}</h3>
+              <p>${cat.desc}</p>
+            </div>
+            <button onclick="filterCategory('${cat.key}')" class="btn btn-sm btn-outline-white">
+              View All <i class="fa-solid fa-arrow-right"></i>
+            </button>
+          </div>
+
+          <!-- CATEGORY PRODUCTS -->
+          <div class="grid">
+            ${categoryProducts.map(p => createProductCardHtml(p)).join('')}
+          </div>
+        </div>
+      `;
+    }
+  });
+
+  container.innerHTML = finalHtml;
 }
 
+// Category Pill Filter handler
 function filterCategory(cat) {
   document.querySelectorAll('.cat-pill').forEach(pill => {
     pill.classList.toggle('active', pill.innerText.includes(cat));
   });
-  renderHomeProducts(cat === 'All' ? state.products : state.products.filter(p => p.category === cat));
+
+  const container = document.getElementById('home-feed-container');
+
+  if (cat === 'All') {
+    renderHomeProducts(state.products);
+  } else {
+    const filtered = state.products.filter(p => p.category === cat);
+    container.innerHTML = `
+      <div class="feed-category-section">
+        <h3 style="margin-bottom:12px;">Category: ${cat} (${filtered.length} products)</h3>
+        <div class="grid">
+          ${filtered.map(p => {
+            const defaultSelling = Number(p.base_price) + Number(p.default_reseller_profit);
+            return `
+              <div class="card product-card">
+                <img src="${p.images[0]}" alt="${p.name}" />
+                <div class="product-card-body">
+                  <span class="profit-badge">Reseller Margin: ₹${p.default_reseller_profit}</span>
+                  <div class="product-title">${p.name}</div>
+                  <div class="price-row">
+                    <span class="selling-price">₹${defaultSelling}</span>
+                    <span class="mrp-price">₹${p.mrp}</span>
+                  </div>
+                  <button class="btn btn-primary btn-sm btn-block" style="margin-top:auto;" onclick="navigateTo('product', { id: '${p.id}' })">
+                    Set Price & Share
+                  </button>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
+  }
 }
 
+// Global Live Search handler
 function handleGlobalSearch(e) {
   const q = e.target.value.toLowerCase().trim();
-  renderHomeProducts(state.products.filter(p => p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q)));
+  const matched = state.products.filter(p => p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q));
+  const container = document.getElementById('home-feed-container');
+  if (!container) return;
+
+  if (!q) {
+    renderHomeProducts(state.products);
+    return;
+  }
+
+  container.innerHTML = `
+    <div class="feed-category-section">
+      <h3 style="margin-bottom:12px;">Search Results for "${q}" (${matched.length})</h3>
+      <div class="grid">
+        ${matched.map(p => {
+          const defaultSelling = Number(p.base_price) + Number(p.default_reseller_profit);
+          return `
+            <div class="card product-card">
+              <img src="${p.images[0]}" alt="${p.name}" />
+              <div class="product-card-body">
+                <span class="profit-badge">Margin: ₹${p.default_reseller_profit}</span>
+                <div class="product-title">${p.name}</div>
+                <div class="price-row">
+                  <span class="selling-price">₹${defaultSelling}</span>
+                  <span class="mrp-price">₹${p.mrp}</span>
+                </div>
+                <button class="btn btn-primary btn-sm btn-block" style="margin-top:auto;" onclick="navigateTo('product', { id: '${p.id}' })">
+                  Set Price & Share
+                </button>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </div>
+  `;
 }
 
-// 3. PRODUCT DETAIL & RESELLER VS CUSTOMER MODE
+// 5. PRODUCT DETAIL (RESELLER VIEW VS CUSTOMER VIEW)
 function loadProductDetailPage(productId, customSellingPrice, referralCode) {
   const p = state.products.find(item => item.id === productId) || state.products[0];
   state.selectedProduct = p;
@@ -185,25 +360,26 @@ function loadProductDetailPage(productId, customSellingPrice, referralCode) {
 
   const basePrice = Number(p.base_price);
 
-  // CUSTOMER VIEW DETECTION: If 'sp' is present in URL
+  // A. CUSTOMER MODE: If 'sp' (selling price) is present in URL
   if (customSellingPrice) {
     state.isCustomerMode = true;
     state.customerSellingPrice = Number(customSellingPrice);
 
-    // Hide Base price & Profit Calculator completely
+    // Completely HIDE supplier base price and reseller margin box from customer
     document.getElementById('reseller-profit-calc-box').style.display = 'none';
     document.getElementById('reseller-action-btns').style.display = 'none';
 
-    // Show Customer COD purchase button with Reseller's Price
+    // Show Customer Instant Purchase & COD button with reseller set price
     document.getElementById('customer-buy-box').style.display = 'block';
     document.getElementById('cust-discount-tag').style.display = 'inline-block';
     document.getElementById('detail-product-selling').innerText = `₹${state.customerSellingPrice}`;
     document.getElementById('btn-cust-price').innerText = state.customerSellingPrice;
     document.getElementById('app-badge-role').innerText = "CUSTOMER STORE";
 
-    document.title = `${p.name} - Special Offer ₹${state.customerSellingPrice}`;
-  } else {
-    // RESELLER VIEW: Show Base price, Calculator & WhatsApp Share
+    document.title = `${p.name} - Offer Price ₹${state.customerSellingPrice}`;
+  } 
+  // B. RESELLER MODE: Full profit margin calculator & WhatsApp sharing tools
+  else {
     state.isCustomerMode = false;
     document.getElementById('reseller-profit-calc-box').style.display = 'block';
     document.getElementById('reseller-action-btns').style.display = 'grid';
@@ -228,25 +404,24 @@ function loadProductDetailPage(productId, customSellingPrice, referralCode) {
   }
 }
 
-// 4. WHATSAPP PHOTO + DETAILS + CUSTOM SELLING PRICE SHARING
+// 6. WHATSAPP VIRAL SHARING WITH PHOTO & LOCKED CUSTOM PRICE LINK
 async function shareProductWhatsApp() {
   const p = state.selectedProduct;
   const customSellingPrice = document.getElementById('calc-selling-input').value;
   const ref = state.referralCode;
 
-  // Generate share link that locks this exact selling price for the customer!
-  const shareLink = `${window.location.origin}${window.location.pathname}?page=product&id=${p.id}&sp=${customSellingPrice}&ref=${ref}`;
+  // Use deployed host or current location
+  const baseUrl = window.location.origin;
+  const shareLink = `${baseUrl}${window.location.pathname}?page=product&id=${p.id}&sp=${customSellingPrice}&ref=${ref}`;
+  const shareText = `🔥 Special Offer: *${p.name}*\n\n💰 Price: *₹${customSellingPrice}* (Free Home Delivery)\n⚡ Instant UPI & Cash on Delivery Available\n\n👉 Order directly here:\n${shareLink}`;
 
-  const shareText = `🔥 Special Offer: *${p.name}*\n\n💰 Price: *₹${customSellingPrice}* (Inclusive of all taxes)\n🚚 Fast Home Delivery (Cash on Delivery Available)\n\n👉 Order directly here:\n${shareLink}`;
-
-  // Check if browser/mobile supports sharing images directly via Web Share API
+  // Native Mobile Web Share with Photo Blob
   if (navigator.canShare && navigator.share) {
     try {
-      showToast('Preparing image for WhatsApp...', 'info');
-      // Fetch product photo as blob/file
+      showToast('Preparing WhatsApp photo...', 'info');
       const response = await fetch(p.images[0]);
       const blob = await response.blob();
-      const imageFile = new File([blob], `${p.id}-photo.jpg`, { type: blob.type });
+      const imageFile = new File([blob], `${p.id}.jpg`, { type: blob.type });
 
       if (navigator.canShare({ files: [imageFile] })) {
         await navigator.share({
@@ -254,20 +429,19 @@ async function shareProductWhatsApp() {
           title: p.name,
           text: shareText
         });
-        showToast('Shared successfully!', 'success');
         return;
       }
     } catch (err) {
-      console.warn('Native image share fallback:', err);
+      console.warn('Native share fallback triggered:', err);
     }
   }
 
-  // Fallback: Open WhatsApp with product details, direct customer price, and photo preview URL
-  const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText + `\n\n📸 Product Photo: ${p.images[0]}`)}`;
+  // Fallback: Open WhatsApp with product details and link
+  const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText + `\n\n📸 Photo: ${p.images[0]}`)}`;
   window.open(waUrl, '_blank');
 }
 
-// 5. CUSTOMER DIRECT COD CHECKOUT
+// 7. CUSTOMER DIRECT BUY & CART LOGIC
 function customerDirectBuyNow() {
   const p = state.selectedProduct;
   const sp = state.customerSellingPrice;
@@ -288,7 +462,6 @@ function customerDirectBuyNow() {
   navigateTo('checkout');
 }
 
-// 6. CART LOGIC
 function addProductToCartFromDetail() {
   const p = state.selectedProduct;
   const sp = Number(document.getElementById('calc-selling-input').value);
@@ -363,8 +536,24 @@ function updateCartBadges() {
   document.querySelectorAll('.cart-badge-count').forEach(b => b.innerText = count);
 }
 
-// 7. CHECKOUT & COD CONFIRMATION
+// 8. CHECKOUT, DYNAMIC UPI APP DEEP-LINKING & COD CONFIRMATION
+function selectPaymentMethod(method) {
+  state.selectedPaymentMethod = method;
+  document.getElementById('pay-opt-upi').classList.toggle('active', method === 'UPI');
+  document.getElementById('pay-opt-cod').classList.toggle('active', method === 'COD');
+  document.getElementById('upi-payment-box').style.display = method === 'UPI' ? 'block' : 'none';
+
+  const btn = document.getElementById('btn-submit-order');
+  btn.innerHTML = method === 'UPI' 
+    ? `<i class="fa-solid fa-circle-check"></i> Submit Paid UPI Order`
+    : `<i class="fa-solid fa-truck-fast"></i> Confirm Cash on Delivery Order`;
+}
+
 function setupCheckoutSummary() {
+  ADMIN_UPI_ID = localStorage.getItem('bluecart_admin_upi') || "bluecart@upi";
+  const displayEl = document.getElementById('display-admin-upi');
+  if (displayEl) displayEl.innerText = ADMIN_UPI_ID;
+
   const totalSelling = state.cart.reduce((s, i) => s + (i.selling_price * i.quantity), 0);
   const totalProfit = state.cart.reduce((s, i) => s + (i.profit * i.quantity), 0);
 
@@ -372,11 +561,20 @@ function setupCheckoutSummary() {
   
   if (state.isCustomerMode) {
     document.getElementById('co-profit-row').style.display = 'none';
-    document.getElementById('co-header-title').innerText = "Delivery Address for COD";
   } else {
     document.getElementById('co-profit-row').style.display = 'flex';
     document.getElementById('co-summary-profit').innerText = `₹${totalProfit}`;
   }
+
+  // Generate NPCI UPI Intent URI for Google Pay, PhonePe, Paytm
+  const upiIntentUri = `upi://pay?pa=${encodeURIComponent(ADMIN_UPI_ID)}&pn=BlueCartShopping&am=${totalSelling}&cu=INR&tn=OrderPayment`;
+  document.getElementById('btn-upi-app-link').href = upiIntentUri;
+
+  // Generate Dynamic QR Code Image for Desktop / Tablets
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(upiIntentUri)}`;
+  document.getElementById('upi-qr-image').src = qrUrl;
+
+  selectPaymentMethod('UPI');
 }
 
 async function handlePlaceOrder(e) {
@@ -385,6 +583,14 @@ async function handlePlaceOrder(e) {
 
   const totalSelling = state.cart.reduce((s, i) => s + (i.selling_price * i.quantity), 0);
   const totalProfit = state.cart.reduce((s, i) => s + (i.profit * i.quantity), 0);
+  const utrRef = document.getElementById('order-upi-ref').value.trim();
+
+  // Validate UTR if UPI Payment Selected
+  if (state.selectedPaymentMethod === 'UPI' && !utrRef) {
+    alert("Please enter the 12-digit UPI UTR / Reference ID after completing payment.");
+    document.getElementById('order-upi-ref').focus();
+    return;
+  }
 
   const newOrder = {
     id: 'BC-' + Math.floor(100000 + Math.random() * 900000),
@@ -396,10 +602,14 @@ async function handlePlaceOrder(e) {
     total_amount: totalSelling,
     reseller_profit: totalProfit,
     order_status: 'Pending',
+    payment_method: state.selectedPaymentMethod,
+    payment_status: state.selectedPaymentMethod === 'UPI' ? 'Submitted (Pending Verification)' : 'Pending',
+    upi_ref_id: utrRef,
     reseller_id: state.referralCode,
-    created_at: new Date().toLocaleDateString()
+    created_at: new Date().toISOString()
   };
 
+  // Sync to Supabase orders table
   if (client) {
     try {
       await client.from('orders').insert(newOrder);
@@ -411,20 +621,21 @@ async function handlePlaceOrder(e) {
   state.orders.unshift(newOrder);
   localStorage.setItem('bluecart_orders', JSON.stringify(state.orders));
 
+  // Clear cart
   state.cart = [];
   localStorage.setItem('bluecart_cart', JSON.stringify([]));
   updateCartBadges();
 
   if (state.isCustomerMode) {
-    alert(`🎉 Thank you, ${newOrder.customer_name}! Your Cash on Delivery order for ₹${totalSelling} has been placed successfully. You will receive an SMS confirmation.`);
+    alert(`🎉 Thank you, ${newOrder.customer_name}! Your order for ₹${totalSelling} has been placed. Payment verification will be completed shortly.`);
     navigateTo('home');
   } else {
-    showToast('Customer COD Order Placed! Reseller Margin recorded.', 'success');
+    showToast('Order Placed! Margin recorded in dashboard.', 'success');
     navigateTo('reseller-dashboard');
   }
 }
 
-// 8. RESELLER DASHBOARD & WALLET
+// 9. RESELLER DASHBOARD
 function renderResellerDashboard() {
   const orders = state.orders;
   const delivered = orders.filter(o => o.order_status === 'Delivered').reduce((s, o) => s + Number(o.reseller_profit), 0);
@@ -448,13 +659,14 @@ function renderResellerDashboard() {
       </div>
       <div style="font-size:0.85rem; margin:6px 0;">Customer: ${o.customer_name} (${o.city})</div>
       <div style="display:flex; justify-content:space-between; font-size:0.85rem; border-top:1px solid #f1f5f9; padding-top:6px;">
-        <span>Collect: ₹${o.total_amount}</span>
+        <span>Collect: ₹${o.total_amount} (${o.payment_method})</span>
         <strong style="color:var(--success);">Your Margin: ₹${o.reseller_profit}</strong>
       </div>
     </div>
   `).join('');
 }
 
+// 10. RESELLER WALLET & WITHDRAWALS
 function renderWalletPage() {
   const readyProfit = state.orders.filter(o => o.order_status === 'Delivered').reduce((s, o) => s + Number(o.reseller_profit), 0);
   document.getElementById('wallet-balance-num').innerText = `₹${readyProfit}.00`;
@@ -469,41 +681,7 @@ function handlePayoutRequest(e) {
   document.getElementById('payout-upi-input').value = '';
 }
 
-// 9. ADMIN ORDER DISPATCH CONTROLLER
-function renderAdminOrdersTable() {
-  const tbody = document.getElementById('admin-orders-table-body');
-  if (state.orders.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px;">No customer orders placed yet.</td></tr>`;
-    return;
-  }
-
-  tbody.innerHTML = state.orders.map((o, idx) => `
-    <tr>
-      <td><strong>${o.id}</strong></td>
-      <td>${o.customer_name}<br><small>${o.customer_mobile}</small></td>
-      <td>₹${o.total_amount}</td>
-      <td style="color:var(--success); font-weight:700;">₹${o.reseller_profit}</td>
-      <td><span class="profit-badge">${o.order_status}</span></td>
-      <td>
-        <select onchange="updateOrderStatusAdmin(${idx}, this.value)" style="padding:4px 8px; border-radius:6px;">
-          <option ${o.order_status === 'Pending' ? 'selected' : ''}>Pending</option>
-          <option ${o.order_status === 'Shipped' ? 'selected' : ''}>Shipped</option>
-          <option ${o.order_status === 'Delivered' ? 'selected' : ''}>Delivered</option>
-          <option ${o.order_status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
-        </select>
-      </td>
-    </tr>
-  `).join('');
-}
-
-function updateOrderStatusAdmin(idx, newStatus) {
-  state.orders[idx].order_status = newStatus;
-  localStorage.setItem('bluecart_orders', JSON.stringify(state.orders));
-  showToast(`Order status updated to ${newStatus}. Wallet balance updated!`, 'success');
-  renderAdminOrdersTable();
-}
-
-// 10. AUTH LOGIN
+// 11. AUTHENTICATION (RESELLER LOGIN)
 function handleAuthSubmit(e) {
   e.preventDefault();
   const email = document.getElementById('auth-email').value;
@@ -513,15 +691,11 @@ function handleAuthSubmit(e) {
   navigateTo('reseller-dashboard');
 }
 
-function demoAdminLogin() {
-  showToast('Switched to Admin Panel', 'success');
-  navigateTo('admin');
-}
-
-// AUTO INIT & URL PARSER
+// 12. INITIALIZATION ON PAGE LOAD
 document.addEventListener('DOMContentLoaded', () => {
   updateCartBadges();
 
+  // Read URL query parameters for deep-linking
   const urlParams = new URLSearchParams(window.location.search);
   const page = urlParams.get('page') || 'home';
   const id = urlParams.get('id');

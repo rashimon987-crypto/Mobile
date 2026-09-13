@@ -3,19 +3,24 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Blue Cart Shopping | Multi-Page Reseller Platform</title>
+  <title>Blue Cart Shopping | Reseller Platform</title>
+  <meta name="description" content="India's leading zero-investment reseller shopping platform. Set your profit, share on WhatsApp, and earn daily via UPI." />
   
+  <!-- Google Fonts & Font Awesome Icons -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   
+  <!-- Stylesheet -->
   <link rel="stylesheet" href="style.css" />
+  
+  <!-- Supabase CDN Client -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
-  <!-- GLOBAL HEADER -->
+  <!-- GLOBAL STICKY HEADER -->
   <header class="app-header">
     <div class="header-container">
       <a href="javascript:void(0)" onclick="navigateTo('home')" class="logo">
@@ -25,7 +30,7 @@
 
       <div class="search-bar">
         <i class="fa-solid fa-magnifying-glass"></i>
-        <input type="text" id="header-search" placeholder="Search products..." onkeyup="handleGlobalSearch(event)" />
+        <input type="text" id="header-search" placeholder="Search kurtis, shirts, electronics..." onkeyup="handleGlobalSearch(event)" />
       </div>
 
       <div class="header-actions">
@@ -40,23 +45,26 @@
     </div>
   </header>
 
+  <!-- TOAST NOTIFICATION CONTAINER -->
   <div id="toast-container"></div>
 
   <!-- MULTI-PAGE CONTAINER -->
   <main id="multipage-wrapper">
 
-    <!-- PAGE 1: HOME -->
+    <!-- ==================== PAGE 1: HOME CATALOG ==================== -->
     <section id="page-home" class="page-view active">
       <div class="container">
+        <!-- Hero Banner -->
         <div class="hero-card">
           <h1>Start Your Reselling Business</h1>
-          <p>Resell products on WhatsApp with zero investment. Set your own selling price and keep 100% of the profit.</p>
+          <p>Zero investment. Pick trending products, set your profit margin, and share directly to WhatsApp.</p>
           <div class="hero-actions">
-            <button class="btn btn-accent" onclick="navigateTo('reseller-dashboard')"><i class="fa-solid fa-bolt"></i> START RESELLING</button>
+            <button class="btn btn-accent" onclick="navigateTo('reseller-dashboard')"><i class="fa-solid fa-bolt"></i> RESELLER DASHBOARD</button>
             <button class="btn btn-outline-white" onclick="document.getElementById('products-section').scrollIntoView({behavior:'smooth'})">BROWSE CATALOG</button>
           </div>
         </div>
 
+        <!-- Top Category Filter Pills -->
         <div class="category-scroll">
           <div class="cat-pill active" onclick="filterCategory('All')">All Products</div>
           <div class="cat-pill" onclick="filterCategory('Women')">Women Fashion</div>
@@ -65,14 +73,17 @@
           <div class="cat-pill" onclick="filterCategory('Home')">Home Essentials</div>
         </div>
 
+        <!-- Dynamic Products & Category Breaks Container -->
         <div id="products-section" style="margin-top: 20px;">
-          <h3 style="margin-bottom: 12px;">Trending Wholesale Products</h3>
-          <div id="home-products-grid" class="grid"></div>
+          <div id="home-feed-container">
+            <!-- Dynamically populated via JS with interspersed category banners -->
+          </div>
         </div>
       </div>
     </section>
 
-    <!-- PAGE 2: PRODUCT DETAILS (RESELLER & CUSTOMER DUAL VIEW) -->
+
+    <!-- ==================== PAGE 2: PRODUCT DETAIL ==================== -->
     <section id="page-product" class="page-view">
       <div class="container" style="max-width: 650px;">
         <button class="btn-back" onclick="navigateBack()"><i class="fa-solid fa-arrow-left"></i> Back</button>
@@ -91,7 +102,7 @@
             <span id="detail-product-mrp" class="mrp-price" style="font-size:1rem;">MRP: ₹0</span>
           </div>
 
-          <!-- A. RESELLER MODE: PROFIT CALCULATOR (കസ്റ്റമർ ലിങ്ക് തുറക്കുമ്പോൾ ഇത് കാണില്ല) -->
+          <!-- RESELLER PROFIT CALCULATOR (Hidden in Customer View) -->
           <div id="reseller-profit-calc-box" class="calc-box">
             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
               <h4 style="color:var(--primary);"><i class="fa-solid fa-calculator"></i> Set Your Margin</h4>
@@ -122,25 +133,26 @@
             <button class="btn btn-accent" onclick="shareProductWhatsApp()"><i class="fa-brands fa-whatsapp"></i> Share on WhatsApp</button>
           </div>
 
-          <!-- B. CUSTOMER MODE: DIRECT CASH ON DELIVERY BUTTON (കസ്റ്റമർ ലിങ്ക് തുറക്കുമ്പോൾ മാത്രം കാണുന്നത്) -->
+          <!-- CUSTOMER ACTION BUTTON (Visible only when customer opens shared link) -->
           <div id="customer-buy-box" style="display:none; margin-top: 14px;">
             <div style="background:#ecfdf5; border:1px solid #a7f3d0; padding:12px; border-radius:8px; margin-bottom:12px; font-size:0.85rem; color:#065f46;">
-              <i class="fa-solid fa-shield-halved"></i> <strong>Verified Cash on Delivery (COD) Available</strong>. Pay only when you receive the product at your home!
+              <i class="fa-solid fa-bolt"></i> <strong>Instant UPI & Cash on Delivery Available!</strong>
             </div>
             <button class="btn btn-accent btn-block" style="padding:15px; font-size:1.05rem;" onclick="customerDirectBuyNow()">
-              <i class="fa-solid fa-truck-fast"></i> Order with Cash on Delivery (₹<span id="btn-cust-price"></span>)
+              <i class="fa-solid fa-bag-shopping"></i> Buy Now (₹<span id="btn-cust-price"></span>)
             </button>
           </div>
 
           <div style="margin-top: 20px; border-top: 1px solid var(--border); padding-top: 14px;">
-            <h4>Product Details</h4>
+            <h4>Product Specifications</h4>
             <p id="detail-product-desc" style="font-size: 0.9rem; color: var(--muted); margin-top: 6px; line-height: 1.5;"></p>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- PAGE 3: RESELLER CART -->
+
+    <!-- ==================== PAGE 3: RESELLER CART ==================== -->
     <section id="page-cart" class="page-view">
       <div class="container" style="max-width: 650px;">
         <button class="btn-back" onclick="navigateTo('home')"><i class="fa-solid fa-arrow-left"></i> Continue Shopping</button>
@@ -156,21 +168,22 @@
             <strong id="cart-total-profit" style="color:var(--success); font-size:1.3rem;">₹0</strong>
           </div>
           <button class="btn btn-primary btn-block" style="margin-top: 14px;" onclick="navigateTo('checkout')">
-            <i class="fa-solid fa-truck-fast"></i> Proceed to Customer Address
+            <i class="fa-solid fa-truck-fast"></i> Proceed to Checkout
           </button>
         </div>
       </div>
     </section>
 
-    <!-- PAGE 4: CHECKOUT FORM -->
+
+    <!-- ==================== PAGE 4: CHECKOUT (UPI & COD) ==================== -->
     <section id="page-checkout" class="page-view">
       <div class="container" style="max-width: 550px;">
         <button class="btn-back" onclick="navigateBack()"><i class="fa-solid fa-arrow-left"></i> Back</button>
-        <h2 style="margin: 14px 0;" id="co-header-title">Delivery Address</h2>
-        <p style="color: var(--muted); font-size: 0.85rem; margin-bottom: 14px;">Please enter complete address for Cash on Delivery shipment.</p>
+        <h2 style="margin: 14px 0;" id="co-header-title">Delivery & Payment</h2>
 
         <form id="checkout-shipping-form" onsubmit="handlePlaceOrder(event)" class="card" style="padding: 16px; display:flex; flex-direction:column; gap:12px;">
-          <input type="text" id="order-cust-name" placeholder="Full Name" required class="form-input" />
+          <h4>Shipping Address</h4>
+          <input type="text" id="order-cust-name" placeholder="Customer Full Name" required class="form-input" />
           <input type="tel" id="order-cust-phone" placeholder="10-Digit Mobile Number" required class="form-input" />
           <textarea id="order-cust-address" placeholder="House / Flat No, Street, Landmark" required class="form-input" style="height: 70px;"></textarea>
           <div style="display:flex; gap:10px;">
@@ -178,20 +191,61 @@
             <input type="text" id="order-cust-pincode" placeholder="PIN Code" required class="form-input" style="flex:1;" />
           </div>
 
+          <!-- PAYMENT METHOD SELECTOR -->
+          <h4 style="margin-top: 10px;">Select Payment Option</h4>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <label class="payment-method-card active" id="pay-opt-upi" onclick="selectPaymentMethod('UPI')">
+              <input type="radio" name="pay_mode" value="UPI" checked style="display:none;" />
+              <i class="fa-solid fa-qrcode" style="font-size:1.4rem; color:var(--primary);"></i>
+              <div>
+                <strong>Pay via UPI</strong>
+                <small style="display:block; color:var(--muted); font-size:0.75rem;">GPay, PhonePe, Paytm</small>
+              </div>
+            </label>
+
+            <label class="payment-method-card" id="pay-opt-cod" onclick="selectPaymentMethod('COD')">
+              <input type="radio" name="pay_mode" value="COD" style="display:none;" />
+              <i class="fa-solid fa-hand-holding-dollar" style="font-size:1.4rem; color:var(--accent);"></i>
+              <div>
+                <strong>Cash on Delivery</strong>
+                <small style="display:block; color:var(--muted); font-size:0.75rem;">Pay upon delivery</small>
+              </div>
+            </label>
+          </div>
+
+          <!-- DYNAMIC UPI PAYMENT SECTION -->
+          <div id="upi-payment-box" class="calc-box" style="border-color: #3b82f6; background: #eff6ff; text-align: center;">
+            <p style="font-size: 0.85rem; margin-bottom: 8px;">Pay directly to Admin UPI ID: <strong id="display-admin-upi" style="color:var(--primary);">loading...</strong></p>
+            
+            <!-- Mobile Direct Pay Deep Link -->
+            <a id="btn-upi-app-link" href="#" class="btn btn-accent btn-block" style="padding: 12px; font-size: 0.95rem; margin-bottom: 10px; background:#2563eb;">
+              <i class="fa-solid fa-mobile-screen-button"></i> Click to Pay with GPay / PhonePe / Paytm
+            </a>
+
+            <div style="font-size: 0.75rem; color: var(--muted); margin: 6px 0;">— OR SCAN QR CODE —</div>
+            <img id="upi-qr-image" src="" alt="UPI QR Code" style="width: 150px; height: 150px; margin: 6px auto; display: block; border-radius: 8px; border: 1px solid #bfdbfe;" />
+
+            <div style="margin-top: 12px; text-align: left;">
+              <label style="font-size: 0.8rem; font-weight: 700; color: var(--text);">Enter 12-digit UPI Reference / UTR No. after paying:</label>
+              <input type="text" id="order-upi-ref" placeholder="e.g. 425619875412" maxlength="16" class="form-input" style="margin-top: 4px; border: 2px solid #2563eb;" />
+              <small style="color: var(--muted); font-size: 0.72rem;">Found in your GPay / PhonePe payment receipt</small>
+            </div>
+          </div>
+
           <div class="calc-box" style="margin: 6px 0;">
-            <div class="calc-row"><span>Payment Option:</span> <strong>Cash on Delivery (COD)</strong></div>
-            <div class="calc-row"><span>Amount to Pay upon Delivery:</span> <strong id="co-summary-total" style="font-size:1.15rem; color:var(--primary);">₹0</strong></div>
+            <div class="calc-row"><span>Total Payable Amount:</span> <strong id="co-summary-total" style="font-size:1.15rem; color:var(--primary);">₹0</strong></div>
             <div class="calc-row" id="co-profit-row"><span>Reseller Profit:</span> <strong id="co-summary-profit" style="color:var(--success);">₹0</strong></div>
           </div>
 
-          <button type="submit" class="btn btn-accent btn-block" style="padding: 14px; font-size: 1rem;">
-            <i class="fa-solid fa-shield-check"></i> Confirm Cash on Delivery Order
+          <button type="submit" id="btn-submit-order" class="btn btn-accent btn-block" style="padding: 14px; font-size: 1rem;">
+            <i class="fa-solid fa-shield-check"></i> Place Order Now
           </button>
         </form>
       </div>
     </section>
 
-    <!-- PAGE 5: RESELLER DASHBOARD -->
+
+    <!-- ==================== PAGE 5: RESELLER DASHBOARD ==================== -->
     <section id="page-reseller-dashboard" class="page-view">
       <div class="container" style="max-width: 800px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
@@ -212,17 +266,18 @@
             <div id="stat-ready-profit" style="font-size:1.6rem; font-weight:800; color:var(--success);">₹0</div>
           </div>
           <div class="card" style="padding: 14px; text-align: center;">
-            <small style="color:var(--muted);">In-Transit Margin</small>
+            <small style="color:var(--muted);">In-Transit Profit</small>
             <div id="stat-transit-profit" style="font-size:1.6rem; font-weight:800; color:var(--accent);">₹0</div>
           </div>
         </div>
 
-        <h3>Your Reseller Shipments</h3>
+        <h3>Your Customer Shipments</h3>
         <div id="reseller-orders-list" style="margin-top: 12px; display:flex; flex-direction:column; gap:10px;"></div>
       </div>
     </section>
 
-    <!-- PAGE 6: RESELLER WALLET -->
+
+    <!-- ==================== PAGE 6: RESELLER WALLET ==================== -->
     <section id="page-reseller-wallet" class="page-view">
       <div class="container" style="max-width: 500px;">
         <button class="btn-back" onclick="navigateTo('reseller-dashboard')"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</button>
@@ -231,72 +286,40 @@
         <div class="calc-box" style="text-align:center; padding: 24px;">
           <small style="color:var(--muted);">Available Balance</small>
           <h1 id="wallet-balance-num" style="color:var(--success); font-size:2.4rem; margin:6px 0;">₹0.00</h1>
-          <small style="color:var(--muted);">Profit credited upon order delivery</small>
+          <small style="color:var(--muted);">Margins are credited upon successful order delivery</small>
         </div>
 
         <div class="card" style="padding: 16px; margin-top: 16px;">
-          <h4>Request UPI Withdrawal</h4>
+          <h4>Request Instant UPI Withdrawal</h4>
           <form id="payout-req-form" onsubmit="handlePayoutRequest(event)" style="margin-top: 12px; display:flex; flex-direction:column; gap:10px;">
             <input type="number" id="payout-amount-input" placeholder="Amount (₹)" required class="form-input" />
-            <input type="text" id="payout-upi-input" placeholder="UPI ID (e.g. name@okaxis)" required class="form-input" />
+            <input type="text" id="payout-upi-input" placeholder="UPI ID (e.g. mobile@upi)" required class="form-input" />
             <button type="submit" class="btn btn-primary btn-block">Transfer to UPI</button>
           </form>
         </div>
       </div>
     </section>
 
-    <!-- PAGE 7: ADMIN ORDER CONTROLLER -->
-    <section id="page-admin" class="page-view">
-      <div class="container">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-          <div>
-            <h2>Admin Management</h2>
-            <small style="color:var(--muted);">Change order delivery status & credit reseller wallets</small>
-          </div>
-          <span class="badge" style="background:#991b1b; padding:4px 8px; font-size:0.75rem;">ADMIN</span>
-        </div>
 
-        <div class="table-card">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Order ID</th>
-                <th>Customer Details</th>
-                <th>Price</th>
-                <th>Reseller Margin</th>
-                <th>Status</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody id="admin-orders-table-body"></tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <!-- PAGE 8: AUTH -->
+    <!-- ==================== PAGE 7: RESELLER LOGIN ==================== -->
     <section id="page-login" class="page-view">
       <div class="container" style="max-width: 420px; padding-top: 30px;">
         <div class="card" style="padding: 24px;">
           <h2 style="text-align: center;">Reseller Login</h2>
-          <p style="text-align:center; color:var(--muted); font-size:0.85rem; margin-bottom: 18px;">Sign in to set prices and manage orders</p>
+          <p style="text-align:center; color:var(--muted); font-size:0.85rem; margin-bottom: 18px;">Sign in to manage your profits and orders</p>
           
           <form id="auth-form" onsubmit="handleAuthSubmit(event)" style="display:flex; flex-direction:column; gap:12px;">
             <input type="email" id="auth-email" placeholder="Email Address" required class="form-input" />
             <input type="password" id="auth-password" placeholder="Password" required class="form-input" />
             <button type="submit" class="btn btn-primary btn-block" style="padding:12px;">Sign In</button>
           </form>
-
-          <div style="text-align:center; margin-top: 14px;">
-            <button class="btn btn-sm btn-outline" onclick="demoAdminLogin()">Demo Admin Login</button>
-          </div>
         </div>
       </div>
     </section>
 
   </main>
 
-  <!-- BOTTOM NAVIGATION -->
+  <!-- MOBILE BOTTOM NAVIGATION (Without Admin Tab) -->
   <nav class="mobile-bottom-nav">
     <button class="nav-tab active" data-page="home" onclick="navigateTo('home')">
       <i class="fa-solid fa-house"></i>
@@ -311,9 +334,9 @@
       <span class="badge cart-badge-count">0</span>
       <span>Cart</span>
     </button>
-    <button class="nav-tab" data-page="admin" onclick="navigateTo('admin')">
-      <i class="fa-solid fa-user-shield"></i>
-      <span>Admin</span>
+    <button class="nav-tab" data-page="reseller-wallet" onclick="navigateTo('reseller-wallet')">
+      <i class="fa-solid fa-wallet"></i>
+      <span>Wallet</span>
     </button>
     <button class="nav-tab" data-page="login" onclick="navigateTo('login')">
       <i class="fa-solid fa-user"></i>
@@ -321,6 +344,7 @@
     </button>
   </nav>
 
+  <!-- MAIN SCRIPT -->
   <script src="script.js"></script>
 </body>
 </html>
