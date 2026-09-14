@@ -561,7 +561,7 @@ function selectPaymentMethod(method) {
 }
 
 function setupCheckoutSummary() {
-  ADMIN_UPI_ID = localStorage.getItem('bluecart_admin_upi') || "bluecart@upi";
+  ADMIN_UPI_ID = localStorage.getItem('bluecart_admin_upi') || "bmfurniture@ibl";
   const displayEl = document.getElementById('display-admin-upi');
   if (displayEl) displayEl.innerText = ADMIN_UPI_ID;
 
