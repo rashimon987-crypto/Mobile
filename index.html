@@ -3,19 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Blue Cart Shopping | Reseller Platform</title>
+  <title> Khasar Cart Shopping | Reseller Platform</title>
   <meta name="description" content="India's leading zero-investment reseller shopping platform. Set your profit, share on WhatsApp, and earn daily via UPI." />
   
-  <!-- Google Fonts & Font Awesome Icons -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   
-  <!-- Stylesheet -->
   <link rel="stylesheet" href="style.css" />
-  
-  <!-- Supabase CDN Client -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -45,16 +41,14 @@
     </div>
   </header>
 
-  <!-- TOAST NOTIFICATION CONTAINER -->
   <div id="toast-container"></div>
 
   <!-- MULTI-PAGE CONTAINER -->
   <main id="multipage-wrapper">
 
-    <!-- ==================== PAGE 1: HOME CATALOG ==================== -->
+    <!-- PAGE 1: HOME CATALOG -->
     <section id="page-home" class="page-view active">
       <div class="container">
-        <!-- Hero Banner -->
         <div class="hero-card">
           <h1>Start Your Reselling Business</h1>
           <p>Zero investment. Pick trending products, set your profit margin, and share directly to WhatsApp.</p>
@@ -64,16 +58,10 @@
           </div>
         </div>
 
-        <!-- Top Category Filter Pills -->
         <div class="category-scroll">
-          <div class="cat-pill active" onclick="filterCategory('All')">All Products</div>
-          <div class="cat-pill" onclick="filterCategory('Women')">Women Fashion</div>
-          <div class="cat-pill" onclick="filterCategory('Men')">Men Fashion</div>
-          <div class="cat-pill" onclick="filterCategory('Electronics')">Electronics</div>
-          <div class="cat-pill" onclick="filterCategory('Home')">Home Essentials</div>
+          <!-- Dynamically populated from script.js -->
         </div>
 
-        <!-- Dynamic Products & Category Breaks Container -->
         <div id="products-section" style="margin-top: 20px;">
           <div id="home-feed-container">
             <!-- Dynamically populated via JS with interspersed category banners -->
@@ -82,8 +70,7 @@
       </div>
     </section>
 
-
-    <!-- ==================== PAGE 2: PRODUCT DETAIL ==================== -->
+    <!-- PAGE 2: PRODUCT DETAIL -->
     <section id="page-product" class="page-view">
       <div class="container" style="max-width: 650px;">
         <button class="btn-back" onclick="navigateBack()"><i class="fa-solid fa-arrow-left"></i> Back</button>
@@ -133,7 +120,7 @@
             <button class="btn btn-accent" onclick="shareProductWhatsApp()"><i class="fa-brands fa-whatsapp"></i> Share on WhatsApp</button>
           </div>
 
-          <!-- CUSTOMER ACTION BUTTON (Visible only when customer opens shared link) -->
+          <!-- CUSTOMER ACTION BUTTON -->
           <div id="customer-buy-box" style="display:none; margin-top: 14px;">
             <div style="background:#ecfdf5; border:1px solid #a7f3d0; padding:12px; border-radius:8px; margin-bottom:12px; font-size:0.85rem; color:#065f46;">
               <i class="fa-solid fa-bolt"></i> <strong>Instant UPI & Cash on Delivery Available!</strong>
@@ -151,8 +138,7 @@
       </div>
     </section>
 
-
-    <!-- ==================== PAGE 3: RESELLER CART ==================== -->
+    <!-- PAGE 3: RESELLER CART -->
     <section id="page-cart" class="page-view">
       <div class="container" style="max-width: 650px;">
         <button class="btn-back" onclick="navigateTo('home')"><i class="fa-solid fa-arrow-left"></i> Continue Shopping</button>
@@ -174,8 +160,7 @@
       </div>
     </section>
 
-
-    <!-- ==================== PAGE 4: CHECKOUT (UPI & COD) ==================== -->
+    <!-- PAGE 4: CHECKOUT (UPI & COD) -->
     <section id="page-checkout" class="page-view">
       <div class="container" style="max-width: 550px;">
         <button class="btn-back" onclick="navigateBack()"><i class="fa-solid fa-arrow-left"></i> Back</button>
@@ -217,7 +202,6 @@
           <div id="upi-payment-box" class="calc-box" style="border-color: #3b82f6; background: #eff6ff; text-align: center;">
             <p style="font-size: 0.85rem; margin-bottom: 8px;">Pay directly to Admin UPI ID: <strong id="display-admin-upi" style="color:var(--primary);">loading...</strong></p>
             
-            <!-- Mobile Direct Pay Deep Link -->
             <a id="btn-upi-app-link" href="#" class="btn btn-accent btn-block" style="padding: 12px; font-size: 0.95rem; margin-bottom: 10px; background:#2563eb;">
               <i class="fa-solid fa-mobile-screen-button"></i> Click to Pay with GPay / PhonePe / Paytm
             </a>
@@ -228,7 +212,7 @@
             <div style="margin-top: 12px; text-align: left;">
               <label style="font-size: 0.8rem; font-weight: 700; color: var(--text);">Enter 12-digit UPI Reference / UTR No. after paying:</label>
               <input type="text" id="order-upi-ref" placeholder="e.g. 425619875412" maxlength="16" class="form-input" style="margin-top: 4px; border: 2px solid #2563eb;" />
-              <small style="color: var(--muted); font-size: 0.72rem;">Found in your GPay / PhonePe payment receipt</small>
+              <small style="color: var(--muted); font-size: 0.72rem;">Found in your payment receipt</small>
             </div>
           </div>
 
@@ -244,8 +228,7 @@
       </div>
     </section>
 
-
-    <!-- ==================== PAGE 5: RESELLER DASHBOARD ==================== -->
+    <!-- PAGE 5: RESELLER DASHBOARD -->
     <section id="page-reseller-dashboard" class="page-view">
       <div class="container" style="max-width: 800px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
@@ -276,8 +259,7 @@
       </div>
     </section>
 
-
-    <!-- ==================== PAGE 6: RESELLER WALLET ==================== -->
+    <!-- PAGE 6: RESELLER WALLET -->
     <section id="page-reseller-wallet" class="page-view">
       <div class="container" style="max-width: 500px;">
         <button class="btn-back" onclick="navigateTo('reseller-dashboard')"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</button>
@@ -286,7 +268,7 @@
         <div class="calc-box" style="text-align:center; padding: 24px;">
           <small style="color:var(--muted);">Available Balance</small>
           <h1 id="wallet-balance-num" style="color:var(--success); font-size:2.4rem; margin:6px 0;">₹0.00</h1>
-          <small style="color:var(--muted);">Margins are credited upon successful order delivery</small>
+          <small style="color:var(--muted);">Margins are credited upon successful delivery</small>
         </div>
 
         <div class="card" style="padding: 16px; margin-top: 16px;">
@@ -300,8 +282,7 @@
       </div>
     </section>
 
-
-    <!-- ==================== PAGE 7: RESELLER LOGIN ==================== -->
+    <!-- PAGE 7: RESELLER LOGIN -->
     <section id="page-login" class="page-view">
       <div class="container" style="max-width: 420px; padding-top: 30px;">
         <div class="card" style="padding: 24px;">
@@ -319,7 +300,7 @@
 
   </main>
 
-  <!-- MOBILE BOTTOM NAVIGATION (Without Admin Tab) -->
+  <!-- MOBILE BOTTOM NAVIGATION -->
   <nav class="mobile-bottom-nav">
     <button class="nav-tab active" data-page="home" onclick="navigateTo('home')">
       <i class="fa-solid fa-house"></i>
@@ -344,7 +325,6 @@
     </button>
   </nav>
 
-  <!-- MAIN SCRIPT -->
   <script src="script.js"></script>
 </body>
 </html>

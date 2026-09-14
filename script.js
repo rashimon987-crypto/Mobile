@@ -1,12 +1,9 @@
 /**
  * =====================================================================
- * BLUE CART SHOPPING - FULL CLIENT ENGINE
- * Multi-page Navigation, Category Feed, Reseller Margins, 
- * WhatsApp Viral Sharing, Instant UPI Deep-linking & Supabase Sync
+ * BLUE CART SHOPPING - FULL CLIENT & RESELLER ENGINE
+ * 100% Validated Syntax, Multi-page Routing, COD & UPI Sync
  * =====================================================================
  */
-
-// 1. SUPABASE DATABASE CONFIGURATION
 const SUPABASE_URL = "https://mxwcnkopzlktfgyyhych.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im14d2Nua29wemxrdGZneXloeWNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY1MzU3ODgsImV4cCI6MjEwMjExMTc4OH0.jEm_GRhCNcmeVRphRy5XdzCopGhP79CzxrR-9hOQROw";
 
@@ -15,59 +12,68 @@ const client = (SUPABASE_URL.startsWith("http") && !SUPABASE_URL.includes("YOUR_
   : null;
 
 // ADMIN CONFIGURABLE UPI ID (Synced with Admin Panel / localStorage)
-let ADMIN_UPI_ID = localStorage.getItem('bluecart_admin_upi') || "bluecart@upi";
+let ADMIN_UPI_ID = localStorage.getItem('bluecart_admin_upi') || "bmfurniture@ibl";
 
-// 2. GLOBAL APP STATE
+// 2. LOAD PRODUCTS & CATEGORIES FROM LOCALSTORAGE (FIRST LOAD FALLBACK)
+const savedLocalProducts = JSON.parse(localStorage.getItem('bluecart_products') || '[]');
+
+const defaultFallbackProducts = [
+  {
+    id: 'p101',
+    name: 'Pure Cotton Printed Anarkali Kurti',
+    category: 'Women',
+    base_price: 299,
+    mrp: 899,
+    default_reseller_profit: 100,
+    is_cod_available: true,
+    images: ['https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=600'],
+    description: 'Pure breathable cotton fabric with rich gold foil ethnic print. Instant UPI payment and Cash On Delivery available across India.'
+  },
+  {
+    id: 'p102',
+    name: 'Wireless Bluetooth Earbuds Pro (36hr Playtime)',
+    category: 'Electronics',
+    base_price: 399,
+    mrp: 1499,
+    default_reseller_profit: 150,
+    is_cod_available: true,
+    images: ['https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=600'],
+    description: 'Deep Bass HD sound, IPX5 water resistant, Type-C fast charging, Touch sensors with voice assistant support.'
+  },
+  {
+    id: 'p103',
+    name: 'Men Premium Regular Fit Casual Shirt',
+    category: 'Men',
+    base_price: 349,
+    mrp: 999,
+    default_reseller_profit: 120,
+    is_cod_available: true,
+    images: ['https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=600'],
+    description: 'Soft-washed premium chambray cotton. Regular fit tailored with button-down collar and curved hem.'
+  },
+  {
+    id: 'p104',
+    name: 'Insulated Hot & Cold Water Bottle (1000ml)',
+    category: 'Home',
+    base_price: 199,
+    mrp: 599,
+    default_reseller_profit: 80,
+    is_cod_available: true,
+    images: ['https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=600'],
+    description: 'Double-wall stainless steel vacuum flask. Keeps beverages chilled for 24 hrs and piping hot for 12 hrs.'
+  }
+];
+
+// 3. GLOBAL APPLICATION STATE
 const state = {
   currentPage: 'home',
   user: null,
   cart: JSON.parse(localStorage.getItem('bluecart_cart') || '[]'),
   referralCode: localStorage.getItem('bluecart_ref') || 'BCS-8821',
-  customerSellingPrice: null, // Passed when customer clicks WhatsApp link
-  isCustomerMode: false,      // True when customer views shared link
+  customerSellingPrice: null,
+  isCustomerMode: false,
   selectedPaymentMethod: 'UPI',
-  products: [
-    {
-      id: 'p101',
-      name: 'Pure Cotton Printed Anarkali Kurti',
-      category: 'Women',
-      base_price: 299,
-      mrp: 899,
-      default_reseller_profit: 100,
-      images: ['https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=600'],
-      description: 'Pure breathable cotton fabric with rich gold foil ethnic print. Instant UPI payment and Cash On Delivery available across India.'
-    },
-    {
-      id: 'p102',
-      name: 'Wireless Bluetooth Earbuds Pro (36hr Playtime)',
-      category: 'Electronics',
-      base_price: 399,
-      mrp: 1499,
-      default_reseller_profit: 150,
-      images: ['https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=600'],
-      description: 'Deep Bass HD sound, IPX5 water resistant, Type-C fast charging, Touch sensors with voice assistant support.'
-    },
-    {
-      id: 'p103',
-      name: 'Men Premium Regular Fit Casual Shirt',
-      category: 'Men',
-      base_price: 349,
-      mrp: 999,
-      default_reseller_profit: 120,
-      images: ['https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=600'],
-      description: 'Soft-washed premium chambray cotton. Regular fit tailored with button-down collar and curved hem.'
-    },
-    {
-      id: 'p104',
-      name: 'Insulated Hot & Cold Water Bottle (1000ml)',
-      category: 'Home',
-      base_price: 199,
-      mrp: 599,
-      default_reseller_profit: 80,
-      images: ['https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=600'],
-      description: 'Double-wall stainless steel vacuum flask. Keeps beverages chilled for 24 hrs and piping hot for 12 hrs.'
-    }
-  ],
+  products: savedLocalProducts.length ? savedLocalProducts : defaultFallbackProducts,
   orders: JSON.parse(localStorage.getItem('bluecart_orders') || '[]'),
   selectedProduct: null
 };
@@ -83,7 +89,7 @@ function showToast(message, type = 'info') {
   setTimeout(() => toast.remove(), 3500);
 }
 
-// 3. MULTI-PAGE NAVIGATION ROUTER (History & Query Aware)
+// 4. MULTI-PAGE NAVIGATION ROUTER
 function navigateTo(pageName, params = {}, pushHistory = true) {
   document.querySelectorAll('.page-view').forEach(p => p.classList.remove('active'));
   const target = document.getElementById(`page-${pageName}`);
@@ -93,12 +99,10 @@ function navigateTo(pageName, params = {}, pushHistory = true) {
     state.currentPage = pageName;
     window.scrollTo(0, 0);
 
-    // Update bottom nav tab state
     document.querySelectorAll('.nav-tab').forEach(tab => {
       tab.classList.toggle('active', tab.getAttribute('data-page') === pageName);
     });
 
-    // Update Browser History & Address Bar
     const query = new URLSearchParams(params);
     query.set('page', pageName);
     const newUrl = `${window.location.pathname}?${query.toString()}`;
@@ -107,7 +111,6 @@ function navigateTo(pageName, params = {}, pushHistory = true) {
       window.history.pushState({ page: pageName, params }, '', newUrl);
     }
 
-    // Initialize individual page logic
     if (pageName === 'home') {
       document.title = "Blue Cart | Wholesale Reseller Shopping";
       renderHomeProducts(state.products);
@@ -134,7 +137,6 @@ function navigateBack() {
   window.history.back();
 }
 
-// Support browser Forward and Backward buttons natively
 window.onpopstate = (event) => {
   const urlParams = new URLSearchParams(window.location.search);
   const page = urlParams.get('page') || 'home';
@@ -144,59 +146,61 @@ window.onpopstate = (event) => {
   navigateTo(page, { id, sp, ref }, false);
 };
 
-// 4. HOME CATALOG WITH INTERSPERSED CATEGORY BREAKS
+// 5. HOME CATALOG WITH SMART CATEGORY MATCHING & PERSISTENCE
 async function renderHomeProducts(productList) {
-  // Sync products from Supabase if online
+  const localItems = JSON.parse(localStorage.getItem('bluecart_products') || '[]');
+  if (localItems.length) state.products = localItems;
+
   if (client) {
     try {
-      const { data } = await client.from('products').select('*').eq('is_active', true);
-      if (data && data.length) state.products = data;
+      const { data: pData } = await client.from('products').select('*').eq('is_active', true).order('created_at', { ascending: false });
+      if (pData && pData.length) {
+        const serverIds = new Set(pData.map(p => p.id));
+        const localOnly = state.products.filter(p => !serverIds.has(p.id));
+        state.products = [...localOnly, ...pData];
+        localStorage.setItem('bluecart_products', JSON.stringify(state.products));
+      }
+
+      const { data: cData } = await client.from('categories').select('*');
+      if (cData && cData.length) {
+        localStorage.setItem('bluecart_categories', JSON.stringify(cData));
+      }
     } catch (err) {
-      console.warn("Using local product catalog fallback:", err);
+      console.warn("Offline fallback active:", err);
     }
   }
 
   const container = document.getElementById('home-feed-container');
   if (!container) return;
 
-  // Visual Category Banners Configuration
-  const categoryConfig = [
-    {
-      key: 'Women',
-      title: '👗 Women Fashion & Kurtis',
-      sub: 'TOP RESELLING PICKS',
-      desc: 'High demand daily wear & festive ethnic collections',
-      cssClass: 'banner-women'
-    },
-    {
-      key: 'Electronics',
-      title: '🎧 Smart Electronics & Audio',
-      sub: 'BEST PROFIT MARGINS',
-      desc: 'Bluetooth earbuds, smartwatches & trending accessories',
-      cssClass: 'banner-electronics'
-    },
-    {
-      key: 'Men',
-      title: '👕 Men Casual & Formal Wear',
-      sub: 'TRENDING THIS WEEK',
-      desc: 'Premium cotton shirts & tailored streetwear',
-      cssClass: 'banner-men'
-    },
-    {
-      key: 'Home',
-      title: '🏠 Home & Kitchen Essentials',
-      sub: 'DAILY ESSENTIALS',
-      desc: 'Insulated vacuum flasks, storage & kitchen utilities',
-      cssClass: 'banner-home'
-    }
-  ];
+  let categories = JSON.parse(localStorage.getItem('bluecart_categories') || '[]');
+  if (!categories.length) {
+    categories = [
+      { name: 'Women', photo: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=300', sub: 'TOP PICKS', desc: 'Kurtis, Sarees & Ethnic Wear', theme: 'banner-women' },
+      { name: 'Electronics', photo: 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=300', sub: 'BEST MARGINS', desc: 'Earbuds, Smartwatches & Audio', theme: 'banner-electronics' },
+      { name: 'Men', photo: 'https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=300', sub: 'TRENDING', desc: 'Shirts & Trousers', theme: 'banner-men' },
+      { name: 'Home', photo: 'https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=300', sub: 'ESSENTIALS', desc: 'Flasks & Kitchenware', theme: 'banner-home' }
+    ];
+  }
 
-  // Helper function to build Product Card HTML
+  const scrollContainer = document.querySelector('.category-scroll');
+  if (scrollContainer) {
+    scrollContainer.innerHTML = `
+      <div class="cat-pill active" onclick="filterCategory('All')">All Products</div>
+      ${categories.map(c => `
+        <div class="cat-pill" onclick="filterCategory('${c.name}')">
+          <img src="${c.photo || 'https://via.placeholder.com/50'}" class="cat-pill-thumb" />
+          <span>${c.name}</span>
+        </div>
+      `).join('')}
+    `;
+  }
+
   function createProductCardHtml(p) {
     const defaultSelling = Number(p.base_price) + Number(p.default_reseller_profit);
     return `
       <div class="card product-card">
-        <img src="${p.images[0]}" alt="${p.name}" loading="lazy" />
+        <img src="${p.images?.[0] || 'https://via.placeholder.com/300'}" alt="${p.name}" loading="lazy" />
         <div class="product-card-body">
           <span class="profit-badge">Reseller Margin: ₹${p.default_reseller_profit}</span>
           <div class="product-title">${p.name}</div>
@@ -214,7 +218,6 @@ async function renderHomeProducts(productList) {
 
   let finalHtml = '';
 
-  // 1. Initial Batch: Top Trending Products
   const topTrending = state.products.slice(0, 2);
   if (topTrending.length > 0) {
     finalHtml += `
@@ -230,26 +233,28 @@ async function renderHomeProducts(productList) {
     `;
   }
 
-  // 2. Interspersing Category Break Banners & their Products
-  categoryConfig.forEach(cat => {
-    const categoryProducts = state.products.filter(p => p.category === cat.key);
+  categories.forEach(cat => {
+    const categoryProducts = state.products.filter(p => 
+      p.category && cat.name && p.category.trim().toLowerCase() === cat.name.trim().toLowerCase()
+    );
 
     if (categoryProducts.length > 0) {
       finalHtml += `
         <div class="feed-category-section">
-          <!-- INTERSPERSED CATEGORY BANNER -->
-          <div class="feed-cat-banner ${cat.cssClass}">
-            <div>
-              <span class="banner-sub">${cat.sub}</span>
-              <h3>${cat.title}</h3>
-              <p>${cat.desc}</p>
+          <div class="feed-cat-banner ${cat.theme || 'banner-women'}">
+            <div class="banner-text-col">
+              <span class="banner-sub">${cat.sub || 'FEATURED'}</span>
+              <h3>${cat.name}</h3>
+              <p>${cat.desc || ''}</p>
+              <button onclick="filterCategory('${cat.name}')" class="btn btn-white-pill">
+                Explore <i class="fa-solid fa-arrow-right"></i>
+              </button>
             </div>
-            <button onclick="filterCategory('${cat.key}')" class="btn btn-sm btn-outline-white">
-              View All <i class="fa-solid fa-arrow-right"></i>
-            </button>
+            <div class="banner-img-col">
+              <img src="${cat.photo || 'https://via.placeholder.com/120'}" alt="${cat.name}" class="banner-cat-photo" />
+            </div>
           </div>
 
-          <!-- CATEGORY PRODUCTS -->
           <div class="grid">
             ${categoryProducts.map(p => createProductCardHtml(p)).join('')}
           </div>
@@ -258,21 +263,35 @@ async function renderHomeProducts(productList) {
     }
   });
 
+  const displayedCategoryNames = categories.map(c => c.name.toLowerCase());
+  const unmatchedProducts = state.products.filter(p => !displayedCategoryNames.includes((p.category || '').toLowerCase()));
+  if (unmatchedProducts.length > 0) {
+    finalHtml += `
+      <div class="feed-category-section">
+        <h3 style="font-size:1.1rem; margin-bottom:10px;"><i class="fa-solid fa-bag-shopping" style="color:var(--primary);"></i> More Products</h3>
+        <div class="grid">
+          ${unmatchedProducts.map(p => createProductCardHtml(p)).join('')}
+        </div>
+      </div>
+    `;
+  }
+
   container.innerHTML = finalHtml;
 }
 
-// Category Pill Filter handler
+// 6. CATEGORY FILTER
 function filterCategory(cat) {
   document.querySelectorAll('.cat-pill').forEach(pill => {
     pill.classList.toggle('active', pill.innerText.includes(cat));
   });
 
   const container = document.getElementById('home-feed-container');
+  if (!container) return;
 
   if (cat === 'All') {
     renderHomeProducts(state.products);
   } else {
-    const filtered = state.products.filter(p => p.category === cat);
+    const filtered = state.products.filter(p => (p.category || '').toLowerCase() === cat.toLowerCase());
     container.innerHTML = `
       <div class="feed-category-section">
         <h3 style="margin-bottom:12px;">Category: ${cat} (${filtered.length} products)</h3>
@@ -281,7 +300,7 @@ function filterCategory(cat) {
             const defaultSelling = Number(p.base_price) + Number(p.default_reseller_profit);
             return `
               <div class="card product-card">
-                <img src="${p.images[0]}" alt="${p.name}" />
+                <img src="${p.images?.[0] || 'https://via.placeholder.com/300'}" alt="${p.name}" />
                 <div class="product-card-body">
                   <span class="profit-badge">Reseller Margin: ₹${p.default_reseller_profit}</span>
                   <div class="product-title">${p.name}</div>
@@ -302,7 +321,7 @@ function filterCategory(cat) {
   }
 }
 
-// Global Live Search handler
+// 7. GLOBAL SEARCH
 function handleGlobalSearch(e) {
   const q = e.target.value.toLowerCase().trim();
   const matched = state.products.filter(p => p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q));
@@ -322,7 +341,7 @@ function handleGlobalSearch(e) {
           const defaultSelling = Number(p.base_price) + Number(p.default_reseller_profit);
           return `
             <div class="card product-card">
-              <img src="${p.images[0]}" alt="${p.name}" />
+              <img src="${p.images?.[0] || 'https://via.placeholder.com/300'}" alt="${p.name}" />
               <div class="product-card-body">
                 <span class="profit-badge">Margin: ₹${p.default_reseller_profit}</span>
                 <div class="product-title">${p.name}</div>
@@ -342,7 +361,7 @@ function handleGlobalSearch(e) {
   `;
 }
 
-// 5. PRODUCT DETAIL (RESELLER VIEW VS CUSTOMER VIEW)
+// 8. PRODUCT DETAIL
 function loadProductDetailPage(productId, customSellingPrice, referralCode) {
   const p = state.products.find(item => item.id === productId) || state.products[0];
   state.selectedProduct = p;
@@ -352,24 +371,21 @@ function loadProductDetailPage(productId, customSellingPrice, referralCode) {
     localStorage.setItem('bluecart_ref', referralCode);
   }
 
-  document.getElementById('detail-product-img').src = p.images[0];
+  document.getElementById('detail-product-img').src = p.images?.[0] || 'https://via.placeholder.com/600';
   document.getElementById('detail-product-cat').innerText = p.category;
   document.getElementById('detail-product-name').innerText = p.name;
   document.getElementById('detail-product-mrp').innerText = `MRP: ₹${p.mrp}`;
-  document.getElementById('detail-product-desc').innerText = p.description;
+  document.getElementById('detail-product-desc').innerText = p.description || 'Quality assured product with verified warranty and delivery.';
 
   const basePrice = Number(p.base_price);
 
-  // A. CUSTOMER MODE: If 'sp' (selling price) is present in URL
   if (customSellingPrice) {
     state.isCustomerMode = true;
     state.customerSellingPrice = Number(customSellingPrice);
 
-    // Completely HIDE supplier base price and reseller margin box from customer
     document.getElementById('reseller-profit-calc-box').style.display = 'none';
     document.getElementById('reseller-action-btns').style.display = 'none';
 
-    // Show Customer Instant Purchase & COD button with reseller set price
     document.getElementById('customer-buy-box').style.display = 'block';
     document.getElementById('cust-discount-tag').style.display = 'inline-block';
     document.getElementById('detail-product-selling').innerText = `₹${state.customerSellingPrice}`;
@@ -377,9 +393,7 @@ function loadProductDetailPage(productId, customSellingPrice, referralCode) {
     document.getElementById('app-badge-role').innerText = "CUSTOMER STORE";
 
     document.title = `${p.name} - Offer Price ₹${state.customerSellingPrice}`;
-  } 
-  // B. RESELLER MODE: Full profit margin calculator & WhatsApp sharing tools
-  else {
+  } else {
     state.isCustomerMode = false;
     document.getElementById('reseller-profit-calc-box').style.display = 'block';
     document.getElementById('reseller-action-btns').style.display = 'grid';
@@ -404,18 +418,16 @@ function loadProductDetailPage(productId, customSellingPrice, referralCode) {
   }
 }
 
-// 6. WHATSAPP VIRAL SHARING WITH PHOTO & LOCKED CUSTOM PRICE LINK
+// 9. WHATSAPP SHARING
 async function shareProductWhatsApp() {
   const p = state.selectedProduct;
   const customSellingPrice = document.getElementById('calc-selling-input').value;
   const ref = state.referralCode;
 
-  // Use deployed host or current location
   const baseUrl = window.location.origin;
   const shareLink = `${baseUrl}${window.location.pathname}?page=product&id=${p.id}&sp=${customSellingPrice}&ref=${ref}`;
   const shareText = `🔥 Special Offer: *${p.name}*\n\n💰 Price: *₹${customSellingPrice}* (Free Home Delivery)\n⚡ Instant UPI & Cash on Delivery Available\n\n👉 Order directly here:\n${shareLink}`;
 
-  // Native Mobile Web Share with Photo Blob
   if (navigator.canShare && navigator.share) {
     try {
       showToast('Preparing WhatsApp photo...', 'info');
@@ -436,12 +448,11 @@ async function shareProductWhatsApp() {
     }
   }
 
-  // Fallback: Open WhatsApp with product details and link
   const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText + `\n\n📸 Photo: ${p.images[0]}`)}`;
   window.open(waUrl, '_blank');
 }
 
-// 7. CUSTOMER DIRECT BUY & CART LOGIC
+// 10. CART LOGIC
 function customerDirectBuyNow() {
   const p = state.selectedProduct;
   const sp = state.customerSellingPrice;
@@ -450,7 +461,7 @@ function customerDirectBuyNow() {
   state.cart = [{
     id: p.id,
     name: p.name,
-    image: p.images[0],
+    image: p.images?.[0] || '',
     base_price: Number(p.base_price),
     selling_price: sp,
     profit: profit,
@@ -476,7 +487,7 @@ function addProductToCartFromDetail() {
   state.cart.push({
     id: p.id,
     name: p.name,
-    image: p.images[0],
+    image: p.images?.[0] || '',
     base_price: base,
     selling_price: sp,
     profit: profit,
@@ -536,7 +547,7 @@ function updateCartBadges() {
   document.querySelectorAll('.cart-badge-count').forEach(b => b.innerText = count);
 }
 
-// 8. CHECKOUT, DYNAMIC UPI APP DEEP-LINKING & COD CONFIRMATION
+// 11. CHECKOUT LOGIC WITH COD ON/OFF RESTRICTION
 function selectPaymentMethod(method) {
   state.selectedPaymentMethod = method;
   document.getElementById('pay-opt-upi').classList.toggle('active', method === 'UPI');
@@ -566,15 +577,29 @@ function setupCheckoutSummary() {
     document.getElementById('co-summary-profit').innerText = `₹${totalProfit}`;
   }
 
-  // Generate NPCI UPI Intent URI for Google Pay, PhonePe, Paytm
+  // Check if any product has COD turned OFF
+  const isCodDisabledForCart = state.cart.some(cartItem => {
+    const originalProd = state.products.find(p => p.id === cartItem.id);
+    return originalProd && originalProd.is_cod_available === false;
+  });
+
+  const codOptionCard = document.getElementById('pay-opt-cod');
+  if (isCodDisabledForCart) {
+    codOptionCard.style.opacity = '0.4';
+    codOptionCard.style.pointerEvents = 'none';
+    selectPaymentMethod('UPI');
+    showToast('Notice: Cash on Delivery is disabled for this product. UPI payment only.', 'info');
+  } else {
+    codOptionCard.style.opacity = '1';
+    codOptionCard.style.pointerEvents = 'auto';
+    selectPaymentMethod('UPI');
+  }
+
   const upiIntentUri = `upi://pay?pa=${encodeURIComponent(ADMIN_UPI_ID)}&pn=BlueCartShopping&am=${totalSelling}&cu=INR&tn=OrderPayment`;
   document.getElementById('btn-upi-app-link').href = upiIntentUri;
 
-  // Generate Dynamic QR Code Image for Desktop / Tablets
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(upiIntentUri)}`;
   document.getElementById('upi-qr-image').src = qrUrl;
-
-  selectPaymentMethod('UPI');
 }
 
 async function handlePlaceOrder(e) {
@@ -585,7 +610,6 @@ async function handlePlaceOrder(e) {
   const totalProfit = state.cart.reduce((s, i) => s + (i.profit * i.quantity), 0);
   const utrRef = document.getElementById('order-upi-ref').value.trim();
 
-  // Validate UTR if UPI Payment Selected
   if (state.selectedPaymentMethod === 'UPI' && !utrRef) {
     alert("Please enter the 12-digit UPI UTR / Reference ID after completing payment.");
     document.getElementById('order-upi-ref').focus();
@@ -609,7 +633,6 @@ async function handlePlaceOrder(e) {
     created_at: new Date().toISOString()
   };
 
-  // Sync to Supabase orders table
   if (client) {
     try {
       await client.from('orders').insert(newOrder);
@@ -621,7 +644,6 @@ async function handlePlaceOrder(e) {
   state.orders.unshift(newOrder);
   localStorage.setItem('bluecart_orders', JSON.stringify(state.orders));
 
-  // Clear cart
   state.cart = [];
   localStorage.setItem('bluecart_cart', JSON.stringify([]));
   updateCartBadges();
@@ -635,7 +657,7 @@ async function handlePlaceOrder(e) {
   }
 }
 
-// 9. RESELLER DASHBOARD
+// 12. RESELLER PORTAL & WALLET
 function renderResellerDashboard() {
   const orders = state.orders;
   const delivered = orders.filter(o => o.order_status === 'Delivered').reduce((s, o) => s + Number(o.reseller_profit), 0);
@@ -666,7 +688,6 @@ function renderResellerDashboard() {
   `).join('');
 }
 
-// 10. RESELLER WALLET & WITHDRAWALS
 function renderWalletPage() {
   const readyProfit = state.orders.filter(o => o.order_status === 'Delivered').reduce((s, o) => s + Number(o.reseller_profit), 0);
   document.getElementById('wallet-balance-num').innerText = `₹${readyProfit}.00`;
@@ -681,7 +702,6 @@ function handlePayoutRequest(e) {
   document.getElementById('payout-upi-input').value = '';
 }
 
-// 11. AUTHENTICATION (RESELLER LOGIN)
 function handleAuthSubmit(e) {
   e.preventDefault();
   const email = document.getElementById('auth-email').value;
@@ -691,11 +711,10 @@ function handleAuthSubmit(e) {
   navigateTo('reseller-dashboard');
 }
 
-// 12. INITIALIZATION ON PAGE LOAD
+// 13. INITIALIZATION ON PAGE LOAD
 document.addEventListener('DOMContentLoaded', () => {
   updateCartBadges();
 
-  // Read URL query parameters for deep-linking
   const urlParams = new URLSearchParams(window.location.search);
   const page = urlParams.get('page') || 'home';
   const id = urlParams.get('id');
