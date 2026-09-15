@@ -1,7 +1,7 @@
 /**
  * =====================================================================
  * BLUE CART SHOPPING - FULL CLIENT & RESELLER ENGINE
- * 100% Validated Syntax, Multi-page Routing, COD & UPI Sync
+ * 3-Photo Gallery Switcher, Full Address Orders, Admin WhatsApp Chat
  * =====================================================================
  */
 const SUPABASE_URL = "https://mxwcnkopzlktfgyyhych.supabase.co";
@@ -11,10 +11,9 @@ const client = (SUPABASE_URL.startsWith("http") && !SUPABASE_URL.includes("YOUR_
   ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
   : null;
 
-// ADMIN CONFIGURABLE UPI ID (Synced with Admin Panel / localStorage)
-let ADMIN_UPI_ID = localStorage.getItem('bluecart_admin_upi') || "bmfurniture@ibl";
+let ADMIN_UPI_ID = localStorage.getItem('bluecart_admin_upi') || "bluecart@upi";
+let ADMIN_WA_NO = localStorage.getItem('bluecart_admin_wa') || "919526605590";
 
-// 2. LOAD PRODUCTS & CATEGORIES FROM LOCALSTORAGE (FIRST LOAD FALLBACK)
 const savedLocalProducts = JSON.parse(localStorage.getItem('bluecart_products') || '[]');
 
 const defaultFallbackProducts = [
@@ -64,7 +63,6 @@ const defaultFallbackProducts = [
   }
 ];
 
-// 3. GLOBAL APPLICATION STATE
 const state = {
   currentPage: 'home',
   user: null,
@@ -78,7 +76,6 @@ const state = {
   selectedProduct: null
 };
 
-// Toast Notifications Helper
 function showToast(message, type = 'info') {
   const container = document.getElementById('toast-container');
   if (!container) return;
@@ -89,7 +86,7 @@ function showToast(message, type = 'info') {
   setTimeout(() => toast.remove(), 3500);
 }
 
-// 4. MULTI-PAGE NAVIGATION ROUTER
+// ROUTER
 function navigateTo(pageName, params = {}, pushHistory = true) {
   document.querySelectorAll('.page-view').forEach(p => p.classList.remove('active'));
   const target = document.getElementById(`page-${pageName}`);
@@ -146,7 +143,7 @@ window.onpopstate = (event) => {
   navigateTo(page, { id, sp, ref }, false);
 };
 
-// 5. HOME CATALOG WITH SMART CATEGORY MATCHING & PERSISTENCE
+// HOME CATALOG
 async function renderHomeProducts(productList) {
   const localItems = JSON.parse(localStorage.getItem('bluecart_products') || '[]');
   if (localItems.length) state.products = localItems;
@@ -279,7 +276,6 @@ async function renderHomeProducts(productList) {
   container.innerHTML = finalHtml;
 }
 
-// 6. CATEGORY FILTER
 function filterCategory(cat) {
   document.querySelectorAll('.cat-pill').forEach(pill => {
     pill.classList.toggle('active', pill.innerText.includes(cat));
@@ -321,7 +317,6 @@ function filterCategory(cat) {
   }
 }
 
-// 7. GLOBAL SEARCH
 function handleGlobalSearch(e) {
   const q = e.target.value.toLowerCase().trim();
   const matched = state.products.filter(p => p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q));
@@ -361,7 +356,15 @@ function handleGlobalSearch(e) {
   `;
 }
 
-// 8. PRODUCT DETAIL
+// 3-PHOTO GALLERY SWITCHER
+window.switchDetailPhoto = function(url, el) {
+  const mainImg = document.getElementById('detail-product-img');
+  if (mainImg) mainImg.src = url;
+  document.querySelectorAll('.gallery-thumb-item').forEach(t => t.classList.remove('active'));
+  if (el) el.classList.add('active');
+};
+
+// PRODUCT DETAIL WITH 3 PHOTOS GALLERY
 function loadProductDetailPage(productId, customSellingPrice, referralCode) {
   const p = state.products.find(item => item.id === productId) || state.products[0];
   state.selectedProduct = p;
@@ -371,11 +374,27 @@ function loadProductDetailPage(productId, customSellingPrice, referralCode) {
     localStorage.setItem('bluecart_ref', referralCode);
   }
 
-  document.getElementById('detail-product-img').src = p.images?.[0] || 'https://via.placeholder.com/600';
+  const mainPhoto = p.images?.[0] || 'https://via.placeholder.com/600';
+  document.getElementById('detail-product-img').src = mainPhoto;
   document.getElementById('detail-product-cat').innerText = p.category;
   document.getElementById('detail-product-name').innerText = p.name;
   document.getElementById('detail-product-mrp').innerText = `MRP: ₹${p.mrp}`;
   document.getElementById('detail-product-desc').innerText = p.description || 'Quality assured product with verified warranty and delivery.';
+
+  // Render 3 Photo Gallery Thumbnails
+  const thumbsContainer = document.getElementById('detail-gallery-thumbs');
+  if (thumbsContainer) {
+    const imgList = (p.images && p.images.length) ? p.images : [mainPhoto];
+    if (imgList.length > 1) {
+      thumbsContainer.style.display = 'flex';
+      thumbsContainer.innerHTML = imgList.map((url, idx) => `
+        <img src="${url}" class="gallery-thumb-item ${idx === 0 ? 'active' : ''}" onclick="switchDetailPhoto('${url}', this)" />
+      `).join('');
+    } else {
+      thumbsContainer.style.display = 'none';
+      thumbsContainer.innerHTML = '';
+    }
+  }
 
   const basePrice = Number(p.base_price);
 
@@ -418,7 +437,7 @@ function loadProductDetailPage(productId, customSellingPrice, referralCode) {
   }
 }
 
-// 9. WHATSAPP SHARING
+// WHATSAPP SHARING
 async function shareProductWhatsApp() {
   const p = state.selectedProduct;
   const customSellingPrice = document.getElementById('calc-selling-input').value;
@@ -452,7 +471,7 @@ async function shareProductWhatsApp() {
   window.open(waUrl, '_blank');
 }
 
-// 10. CART LOGIC
+// CART LOGIC
 function customerDirectBuyNow() {
   const p = state.selectedProduct;
   const sp = state.customerSellingPrice;
@@ -547,7 +566,7 @@ function updateCartBadges() {
   document.querySelectorAll('.cart-badge-count').forEach(b => b.innerText = count);
 }
 
-// 11. CHECKOUT LOGIC WITH COD ON/OFF RESTRICTION
+// CHECKOUT LOGIC WITH ADDRESS & PRODUCT SYNC
 function selectPaymentMethod(method) {
   state.selectedPaymentMethod = method;
   document.getElementById('pay-opt-upi').classList.toggle('active', method === 'UPI');
@@ -561,7 +580,7 @@ function selectPaymentMethod(method) {
 }
 
 function setupCheckoutSummary() {
-  ADMIN_UPI_ID = localStorage.getItem('bluecart_admin_upi') || "bmfurniture@ibl";
+  ADMIN_UPI_ID = localStorage.getItem('bluecart_admin_upi') || "bluecart@upi";
   const displayEl = document.getElementById('display-admin-upi');
   if (displayEl) displayEl.innerText = ADMIN_UPI_ID;
 
@@ -577,7 +596,6 @@ function setupCheckoutSummary() {
     document.getElementById('co-summary-profit').innerText = `₹${totalProfit}`;
   }
 
-  // Check if any product has COD turned OFF
   const isCodDisabledForCart = state.cart.some(cartItem => {
     const originalProd = state.products.find(p => p.id === cartItem.id);
     return originalProd && originalProd.is_cod_available === false;
@@ -602,6 +620,7 @@ function setupCheckoutSummary() {
   document.getElementById('upi-qr-image').src = qrUrl;
 }
 
+// ORDER PLACEMENT: SENDS FULL ADDRESS & PRODUCT PHOTO TO ADMIN
 async function handlePlaceOrder(e) {
   e.preventDefault();
   if (state.cart.length === 0) return;
@@ -616,13 +635,18 @@ async function handlePlaceOrder(e) {
     return;
   }
 
+  const primaryItem = state.cart[0];
+
   const newOrder = {
     id: 'BC-' + Math.floor(100000 + Math.random() * 900000),
-    customer_name: document.getElementById('order-cust-name').value,
-    customer_mobile: document.getElementById('order-cust-phone').value,
-    shipping_address: document.getElementById('order-cust-address').value,
-    city: document.getElementById('order-cust-city').value,
-    pincode: document.getElementById('order-cust-pincode').value,
+    customer_name: document.getElementById('order-cust-name').value.trim(),
+    customer_mobile: document.getElementById('order-cust-phone').value.trim(),
+    shipping_address: document.getElementById('order-cust-address').value.trim(),
+    city: document.getElementById('order-cust-city').value.trim(),
+    pincode: document.getElementById('order-cust-pincode').value.trim(),
+    product_name: primaryItem ? primaryItem.name : 'Catalog Item',
+    product_image: primaryItem ? primaryItem.image : '',
+    items: state.cart,
     total_amount: totalSelling,
     reseller_profit: totalProfit,
     order_status: 'Pending',
@@ -649,7 +673,7 @@ async function handlePlaceOrder(e) {
   updateCartBadges();
 
   if (state.isCustomerMode) {
-    alert(`🎉 Thank you, ${newOrder.customer_name}! Your order for ₹${totalSelling} has been placed. Payment verification will be completed shortly.`);
+    alert(`🎉 Thank you, ${newOrder.customer_name}! Your order for ₹${totalSelling} has been placed. You will receive tracking updates.`);
     navigateTo('home');
   } else {
     showToast('Order Placed! Margin recorded in dashboard.', 'success');
@@ -657,7 +681,7 @@ async function handlePlaceOrder(e) {
   }
 }
 
-// 12. RESELLER PORTAL & WALLET
+// RESELLER PORTAL & WALLET
 function renderResellerDashboard() {
   const orders = state.orders;
   const delivered = orders.filter(o => o.order_status === 'Delivered').reduce((s, o) => s + Number(o.reseller_profit), 0);
@@ -711,9 +735,19 @@ function handleAuthSubmit(e) {
   navigateTo('reseller-dashboard');
 }
 
-// 13. INITIALIZATION ON PAGE LOAD
+// SETUP FLOATING ADMIN WHATSAPP CHAT BUTTON
+function setupFloatingWhatsAppChat() {
+  ADMIN_WA_NO = localStorage.getItem('bluecart_admin_wa') || "9526605590";
+  const waBtn = document.getElementById('floating-wa-btn');
+  if (waBtn) {
+    waBtn.href = `https://wa.me/${ADMIN_WA_NO}?text=${encodeURIComponent("Hello Blue Cart Admin, I have a query regarding a product/order.")}`;
+  }
+}
+
+// INITIALIZATION
 document.addEventListener('DOMContentLoaded', () => {
   updateCartBadges();
+  setupFloatingWhatsAppChat();
 
   const urlParams = new URLSearchParams(window.location.search);
   const page = urlParams.get('page') || 'home';

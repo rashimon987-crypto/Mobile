@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title> Khasar Cart Shopping | Reseller Platform</title>
+  <title>Blue Cart Shopping | Reseller Platform</title>
   <meta name="description" content="India's leading zero-investment reseller shopping platform. Set your profit, share on WhatsApp, and earn daily via UPI." />
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -64,24 +64,30 @@
 
         <div id="products-section" style="margin-top: 20px;">
           <div id="home-feed-container">
-            <!-- Dynamically populated via JS with interspersed category banners -->
+            <!-- Interspersed Category Breaks via JS -->
           </div>
         </div>
       </div>
     </section>
 
-    <!-- PAGE 2: PRODUCT DETAIL -->
+    <!-- PAGE 2: PRODUCT DETAIL (WITH 3-PHOTO GALLERY) -->
     <section id="page-product" class="page-view">
       <div class="container" style="max-width: 650px;">
         <button class="btn-back" onclick="navigateBack()"><i class="fa-solid fa-arrow-left"></i> Back</button>
         
         <div class="card" style="margin-top: 10px; padding: 16px;">
+          <!-- MAIN BIG PHOTO -->
           <div style="position:relative;">
             <img id="detail-product-img" src="" alt="Product" class="product-gallery-img" />
             <span id="cust-discount-tag" class="profit-badge" style="position:absolute; top:12px; left:12px; font-size:0.8rem; display:none;">SPECIAL OFFER</span>
           </div>
 
-          <span class="badge-tag" id="detail-product-cat" style="margin-top:12px;">Category</span>
+          <!-- 3-PHOTO THUMBNAILS ROW -->
+          <div id="detail-gallery-thumbs" class="gallery-thumbs-row">
+            <!-- Up to 3 photos loaded dynamically -->
+          </div>
+
+          <span class="badge-tag" id="detail-product-cat" style="margin-top:14px;">Category</span>
           <h2 id="detail-product-name" style="margin: 8px 0;">Product Title</h2>
           
           <div class="price-row" style="margin-bottom: 14px;">
@@ -89,7 +95,7 @@
             <span id="detail-product-mrp" class="mrp-price" style="font-size:1rem;">MRP: ₹0</span>
           </div>
 
-          <!-- RESELLER PROFIT CALCULATOR (Hidden in Customer View) -->
+          <!-- RESELLER PROFIT CALCULATOR (Hidden in Customer Mode) -->
           <div id="reseller-profit-calc-box" class="calc-box">
             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
               <h4 style="color:var(--primary);"><i class="fa-solid fa-calculator"></i> Set Your Margin</h4>
@@ -114,7 +120,7 @@
             </div>
           </div>
 
-          <!-- RESELLER ACTION BUTTONS -->
+          <!-- RESELLER BUTTONS -->
           <div id="reseller-action-btns" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px;">
             <button class="btn btn-outline" onclick="addProductToCartFromDetail()"><i class="fa-solid fa-cart-plus"></i> Add To Cart</button>
             <button class="btn btn-accent" onclick="shareProductWhatsApp()"><i class="fa-brands fa-whatsapp"></i> Share on WhatsApp</button>
@@ -160,19 +166,19 @@
       </div>
     </section>
 
-    <!-- PAGE 4: CHECKOUT (UPI & COD) -->
+    <!-- PAGE 4: CHECKOUT (FULL ADDRESS & PAYMENTS) -->
     <section id="page-checkout" class="page-view">
       <div class="container" style="max-width: 550px;">
         <button class="btn-back" onclick="navigateBack()"><i class="fa-solid fa-arrow-left"></i> Back</button>
         <h2 style="margin: 14px 0;" id="co-header-title">Delivery & Payment</h2>
 
         <form id="checkout-shipping-form" onsubmit="handlePlaceOrder(event)" class="card" style="padding: 16px; display:flex; flex-direction:column; gap:12px;">
-          <h4>Shipping Address</h4>
+          <h4>Shipping Destination Address</h4>
           <input type="text" id="order-cust-name" placeholder="Customer Full Name" required class="form-input" />
           <input type="tel" id="order-cust-phone" placeholder="10-Digit Mobile Number" required class="form-input" />
-          <textarea id="order-cust-address" placeholder="House / Flat No, Street, Landmark" required class="form-input" style="height: 70px;"></textarea>
+          <textarea id="order-cust-address" placeholder="House / Flat No, Building, Street, Landmark" required class="form-input" style="height: 70px;"></textarea>
           <div style="display:flex; gap:10px;">
-            <input type="text" id="order-cust-city" placeholder="City / Town" required class="form-input" style="flex:1;" />
+            <input type="text" id="order-cust-city" placeholder="City / District / Town" required class="form-input" style="flex:1;" />
             <input type="text" id="order-cust-pincode" placeholder="PIN Code" required class="form-input" style="flex:1;" />
           </div>
 
@@ -299,6 +305,12 @@
     </section>
 
   </main>
+
+  <!-- FLOATING ADMIN WHATSAPP CHAT SUPPORT (കസ്റ്റമർക്ക് അഡ്മിനുമായി ചാറ്റ് ചെയ്യാൻ) -->
+  <a href="#" id="floating-wa-btn" class="floating-wa-btn" target="_blank" title="Chat with Admin">
+    <i class="fa-brands fa-whatsapp"></i>
+    <span>Chat Support</span>
+  </a>
 
   <!-- MOBILE BOTTOM NAVIGATION -->
   <nav class="mobile-bottom-nav">
